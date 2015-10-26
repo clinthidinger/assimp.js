@@ -8,8 +8,9 @@
 //#include "assimp/LogStream.hpp"
 
 using namespace emscripten;
+using namespace Assimp;
 
-MSCRIPTEN_BINDINGS(assimp)
+EMSCRIPTEN_BINDINGS(assimp)
 {
 
 	// aiReturn
@@ -42,7 +43,7 @@ MSCRIPTEN_BINDINGS(assimp)
 		.constructor<>()
 		.constructor<const Importer &>()
     	//~Importer();
-		.function("RegisterLoader", &Importer::RegisterLoader)
+		.function("RegisterLoader", &Importer::RegisterLoader, allow_raw_pointers())
 		.function("UnregisterLoader", &Importer::UnregisterLoader, allow_raw_pointers())
 		.function("RegisterPPStep", &Importer::RegisterPPStep, allow_raw_pointers())
 		.function("UnregisterPPStep", &Importer::UnregisterPPStep, allow_raw_pointers())
@@ -58,30 +59,32 @@ MSCRIPTEN_BINDINGS(assimp)
 	    .function("GetPropertyMatrix", &Importer::GetPropertyMatrix, allow_raw_pointers())
 	    .function("SetIOHandler", &Importer::SetIOHandler, allow_raw_pointers())
 	    .function("GetIOHandler", &Importer::GetIOHandler, allow_raw_pointers())
-	    .function("IsDefaultIOHandler", &Importer::IsDefaultIOHandler, allow_raw_pointers())
+	    .function("IsDefaultIOHandler", &Importer::IsDefaultIOHandler)
 	    .function("SetProgressHandler", &Importer::SetProgressHandler, allow_raw_pointers())
-	    .function("GetProgressHandler", &Importer::GetProgressHandler)
+	    .function("GetProgressHandler", &Importer::GetProgressHandler, allow_raw_pointers())
 	    .function("IsDefaultProgressHandler", &Importer::IsDefaultProgressHandler)
 	    .function("ValidateFlags", &Importer::ValidateFlags)
-	    .function("ReadFile", &Importer::ReadFile, allow_raw_pointers())
+	    //!!!.function("ReadFile", &Importer::ReadFile, allow_raw_pointers())
+	    
 	    .function("ReadFileFromMemory", &Importer::ReadFileFromMemory, allow_raw_pointers())
-	    .function("ApplyPostProcessing", &Importer::ApplyPostProcessing)
-	    .function("ReadFile ", &Importer::eadFile, allow_raw_pointers())
+	    .function("ApplyPostProcessing", &Importer::ApplyPostProcessing, allow_raw_pointers())
+	    //!!!.function("ReadFile", &Importer::ReadFile, allow_raw_pointers())
 	    .function("FreeScene", &Importer::FreeScene)
-	    .function("GetErrorString", &Importer::GetErrorString)
-	    .function("GetScene", &Importer::GetScene)
-	    .function("GetOrphanedScene", &Importer::GetOrphanedScene)
-	    .function("IsExtensionSupported", select_overload<bool(const char*)>(&Importer::IsExtensionSupported), allow_raw_pointers())
-	    .function("IsExtensionSupported", select_overload<bool(const std::string&)>(&Importer::IsExtensionSupported), allow_raw_pointers())
-	    .function("GetExtensionList", select_overload<void(aiString&)>(&Importer::GetExtensionList), allow_raw_pointers())
-	    .function("GetExtensionList", select_overload<void(std::string&)>(&Importer::GetExtensionList), allow_raw_pointers())
+	    .function("GetErrorString", &Importer::GetErrorString, allow_raw_pointers())
+	    .function("GetScene", &Importer::GetScene, allow_raw_pointers())
+	    .function("GetOrphanedScene", &Importer::GetOrphanedScene, allow_raw_pointers())
+	    //!!!.function("IsExtensionSupported", select_overload<bool(const char*)>(&Importer::IsExtensionSupported), allow_raw_pointers())
+	    //!!!.function("IsExtensionSupported", select_overload<bool(const std::string&)>(&Importer::IsExtensionSupported), allow_raw_pointers())
+	    //!!!.function("GetExtensionList", select_overload<void(aiString&)>(&Importer::GetExtensionList), allow_raw_pointers())
+	    //!!!.function("GetExtensionList", select_overload<void(std::string&)>(&Importer::GetExtensionList), allow_raw_pointers())
 	    .function("GetImporterCount", &Importer::GetImporterCount)
-	    .function("GetImporterInfo", &Importer::GetImporterInfo)
-	    .function("GetImporter", &Importer::GetImporter)
-	    .function("GetImporter", &Importer::GetImporter, allow_raw_pointers())
+	    .function("GetImporterInfo", &Importer::GetImporterInfo, allow_raw_pointers())
+	    //!!!.function("GetImporter", &Importer::GetImporter, allow_raw_pointers())
+	    //!!!.function("GetImporter", &Importer::GetImporter, allow_raw_pointers())
 	    .function("GetImporterIndex", &Importer::GetImporterIndex, allow_raw_pointers())
 	    .function("GetMemoryRequirements", &Importer::GetMemoryRequirements, allow_raw_pointers())
 	    .function("SetExtraVerbose", &Importer::SetExtraVerbose)
+	    //*/
 	    ;
 
 	//value_object<Exporter::ExportFormatEntry>("Exporter_ExportFormatEntry")
@@ -89,7 +92,7 @@ MSCRIPTEN_BINDINGS(assimp)
     //    .field("mExportFunction", &Exporter::ExportFormatEntry::mExportFunction)
     //    .field("mEnforcePP", &Exporter::ExportFormatEntry::mEnforcePP)
     //    ;
-
+/*
 	class_<Exporter>("Exporter")
 		.constructor<>()
 		.function("SetIOHandler", &Eporter::SetIOHandler)
@@ -178,8 +181,7 @@ MSCRIPTEN_BINDINGS(assimp)
 	    .function("GetNumColorChannels", &aiMesh::GetNumColorChannels)
 	    .function("HasBones", &aiMesh::HasBones)
 	    ;
- 
-};
+	 */   
 
 } // end EMSCRIPTEN_BINDINGS
 
