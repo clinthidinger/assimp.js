@@ -8,8 +8,39 @@
 //#include "assimp/DefaultLogger.hpp"
 //#include "assimp/LogStream.hpp"
 
+#define DefineGetter(ClassType, MemberType, MemberName, FuncName) 	MemberType get##FuncName(ClassType &object) { return object.MemberName; }
+#define DefineSetter(ClassType, MemberType, MemberName, FuncName)	void set##FuncName(ClassType &object, MemberType value) { object.MemberName = value; }
+
+#define DefineGetterSetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineGetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineSetter(ClassName, MemberType, MemberName, FuncName)
+
+
 using namespace emscripten;
 using namespace Assimp;
+
+// Importer
+void getExtensionList(Importer &importer, aiString &str) 
+{
+	importer.GetExtensionList(str);
+}
+
+// Exporter
+namespace aiNode_ext
+{
+	DefineGetter(aiNode, aiString &, mName, Name)
+	void setName(aiNode &node, const std::string &value)
+	{
+		node.mName = value;
+	}
+	DefineGetterSetter(aiNode, aiMatrix4x4 &, mTransformation, Transformation)
+	DefineGetterSetter(aiNode, aiNode *, mParent, Parent)
+	DefineGetterSetter(aiNode, unsigned int, mNumChildren, NumChildren)
+	DefineGetterSetter(aiNode, aiNode **, mChildren, Children)
+	DefineGetterSetter(aiNode, unsigned int, mNumMeshes, NumMeshes)
+	DefineGetterSetter(aiNode, unsigned int *, mMeshes, Meshes)
+}
+
 
 EMSCRIPTEN_BINDINGS(assimp)
 {
@@ -39,7 +70,6 @@ EMSCRIPTEN_BINDINGS(assimp)
 	// aiFace
 	// aiBone
 	// aiAnimMesh
-
 	class_<Importer>("Importer")
 		.constructor<>()
 		.constructor<const Importer &>()
@@ -75,7 +105,7 @@ EMSCRIPTEN_BINDINGS(assimp)
 	    .function("IsExtensionSupported", select_overload<bool (const char*) const>(&Importer::IsExtensionSupported), allow_raw_pointers())
 	    .function("IsExtensionSupported", select_overload<bool (const std::string&) const>(&Importer::IsExtensionSupported), allow_raw_pointers())
 	    .function("GetExtensionList", select_overload<void (aiString&) const>(&Importer::GetExtensionList), allow_raw_pointers())
-	    // PROBABLY WRAP!!! .function("GetExtensionList", select_overload<void (std::string&) const>(&Importer::GetExtensionList), allow_raw_pointers())
+	    .function("getExtensionList", &getExtensionList, allow_raw_pointers())
 	    .function("GetImporterCount", &Importer::GetImporterCount)
 	    .function("GetImporterInfo", &Importer::GetImporterInfo, allow_raw_pointers())
 	    .function("GetImporter", select_overload<BaseImporter *(size_t) const>(&Importer::GetImporter), allow_raw_pointers())
@@ -117,12 +147,27 @@ EMSCRIPTEN_BINDINGS(assimp)
 // Will need to wrap all properties!!!
 
 	class_<aiNode>("aiNode")
-    	.property("mName", &aiNode::mName)
-    	.property("mTransformation", &aiNode::mTransformation)
+    	//.property("mName", &aiNode::mName)
+		.function("getName", &aiNode_ext::getName)
+		.function("setName", &aiNode_ext::setName)
+		.function("getTransformation", &aiNode_ext::getTransformation)
+		.function("setTransformation", &aiNode_ext::setTransformation)
+		.function("getParent", &aiNode_ext::getParent, allow_raw_pointers())
+		.function("setParent", &aiNode_ext::setParent, allow_raw_pointers())
+		.function("getNumChildren", &aiNode_ext::getNumChildren)
+		.function("setNumChildren", &aiNode_ext::setNumChildren)
+		//.function("getChildren", &aiNode_ext::getChildren, allow_raw_pointers())
+		//.function("setChildren", &aiNode_ext::setChildren, allow_raw_pointers())
+		.function("getNumMeshes", &aiNode_ext::getNumMeshes)
+		.function("setNumMeshes", &aiNode_ext::setNumMeshes)
+		.function("getMeshes", &aiNode_ext::getMeshes, allow_raw_pointers())
+		.function("setMeshes", &aiNode_ext::setMeshes, allow_raw_pointers())
+
+    	//.property("mTransformation", &aiNode::mTransformation)
     	//!!!.property("mParent", &aiNode::mParent)
-    	.property("mNumChildren", &aiNode::mNumChildren)
+    	//.property("mNumChildren", &aiNode::mNumChildren)
     	//.property("mChildren", &aiNode::mChildren)
-    	.property("mNumMeshes", &aiNode::mNumMeshes)
+    	//.property("mNumMeshes", &aiNode::mNumMeshes)
     	//.property("mMeshes", &aiNode::mMeshes, allow_raw_pointers())
     	.constructor<>()
     	.constructor<const std::string&>()
