@@ -1,6 +1,9 @@
 
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
+#include "assimp/vector3.h"
+#include "assimp/quaternion.h"
+#include "assimp/matrix3x3.h"
 #include "assimp/matrix4x4.h"
 
 using namespace emscripten;
@@ -16,7 +19,7 @@ namespace aiMatrix4x4Embind
     DefineGetterSetter(aiMatrix4x4, TReal, b1, B1)
     DefineGetterSetter(aiMatrix4x4, TReal, b2, B2)
     DefineGetterSetter(aiMatrix4x4, TReal, b3, B3)
-    DefineGetterSetter(aiMatrix4x4, TReal, b4, b4)
+    DefineGetterSetter(aiMatrix4x4, TReal, b4, B4)
     DefineGetterSetter(aiMatrix4x4, TReal, c1, C1)
     DefineGetterSetter(aiMatrix4x4, TReal, c2, C2)
     DefineGetterSetter(aiMatrix4x4, TReal, c3, C3)
@@ -57,7 +60,7 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
         .constructor<>()
         .constructor<TReal, TReal, TReal, TReal,  TReal, TReal, TReal, TReal,  TReal, TReal, TReal, TReal,  TReal, TReal, TReal, TReal>()
         .constructor<const aiMatrix3x3 &>()
-        .constructor<const aiVector3D& scaling, const aiQuaternionD& rotation, const aiVector3D& position>()
+        .constructor<const aiVector3D&, const aiQuaternion&, const aiVector3D&>()
         .function("at", select_overload<TReal *(unsigned int)>(&aiMatrix4x4::operator[]), allow_raw_pointers())
         .function("at", select_overload<const TReal *(unsigned int) const>(&aiMatrix4x4::operator[]), allow_raw_pointers())
         .function("op_equal_to", &aiMatrix4x4::operator==)
@@ -71,8 +74,8 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
         .function("isIdentity", &aiMatrix4x4::IsIdentity)
         .function("decompose", &aiMatrix4x4::Decompose)
         .function("decomposeNoScaling", &aiMatrix4x4::DecomposeNoScaling)
-        .function("fromEulerAnglesXYZ", select_overload<aiMatrix4x4t& (TReal, TReal, TReal)>(&aiMatrix4x4::FromEulerAnglesXYZ))
-        .function("fromEulerAnglesXYZ", select_overload<aiMatrix4x4t& (const aiVector3t<TReal> &)>(&aiMatrix4x4::FromEulerAnglesXYZ))
+        .function("fromEulerAnglesXYZ", select_overload<aiMatrix4x4& (TReal, TReal, TReal)>(&aiMatrix4x4::FromEulerAnglesXYZ))
+        .function("fromEulerAnglesXYZ", select_overload<aiMatrix4x4& (const aiVector3t<TReal> &)>(&aiMatrix4x4::FromEulerAnglesXYZ))
         .class_function("rotationX", &aiMatrix4x4::RotationX)
         .class_function("rotationY", &aiMatrix4x4::RotationY)
         .class_function("rotationZ", &aiMatrix4x4::RotationZ)
