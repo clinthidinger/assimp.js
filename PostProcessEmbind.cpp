@@ -2,6 +2,7 @@
 #include "UtilEmbind.h"
 #include "assimp/postprocess.h"
 
+using namespace emscripten;
 
 namespace aiPostProcessEmbind
 {
@@ -53,8 +54,8 @@ EMSCRIPTEN_BINDINGS(assimp_postprocess)
         .value("Debone", aiProcess_Debone)
         ;
 
-    function("GetConvertToLeftHandedFlags", &aiPostProcessEmbind::GetConvertToLeftHandedFlags)
-    function("GetTargetRealtimeFastFlags", &aiPostProcessEmbind::GetTargetRealtimeFastFlags)
-    function("GetTargetRealtimeQualityFlags", &aiPostProcessEmbind::GetTargetRealtimeQualityFlags)
-    function("GetTargetRealtimeMaxQualityFlags", &aiPostProcessEmbind::GetTargetRealtimeMaxQualityFlags)
+    function("GetConvertToLeftHandedFlags", &aiPostProcessEmbind::GetConvertToLeftHandedFlags);
+    function("GetTargetRealtimeFastFlags", &aiPostProcessEmbind::GetTargetRealtimeFastFlags);
+    function("GetTargetRealtimeQualityFlags", &aiPostProcessEmbind::GetTargetRealtimeQualityFlags);
+    function("GetTargetRealtimeMaxQualityFlags", &aiPostProcessEmbind::GetTargetRealtimeMaxQualityFlags);
 }
