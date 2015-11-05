@@ -8,7 +8,11 @@ using namespace emscripten;
 namespace aiStringEmbind
 {
     DefineGetterSetter(aiString, size_t, length, Length)
-    DefineGetter(aiString, char *, data, Data)
+    //DefineGetter(aiString, char *, data, Data)
+    std::string str(aiString &aiStr)
+    {
+        return std::string(aiStr.C_Str());
+    }
 }
 
 namespace aiColor3DEmbind
@@ -44,7 +48,7 @@ namespace aiMemoryInfoEmbind
     DefineGetterSetter(aiMemoryInfo, unsigned int, total, Total)
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_types)
 {	
     class_<aiPlane>("aiPlane")
         .constructor<>()
@@ -73,7 +77,7 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
     class_<aiColor3D>("aiColor3D")
         .constructor<>()
         .constructor<float, float, float>()
-        .constructor<float>()
+        //.constructor<float>()
         .constructor<const aiColor3D&>()
         .function("op_equal_to", &aiColor3D::operator==)
         .function("op_not_equal_to", &aiColor3D::operator!=)
@@ -95,7 +99,7 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
 
     class_<aiString>("aiString")
         .constructor<>()
-        .constructor<const aiString&>()
+        //.constructor<const aiString&>()
         .constructor<const std::string&>()
         .function("set", select_overload<void(const std::string&)>(&aiString::Set))
         .function("set", select_overload<void(const char*)>(&aiString::Set), allow_raw_pointers())
@@ -105,10 +109,11 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
         .function("op_not_equal_to", &aiString::operator!=, allow_raw_pointers())
         .function("append", &aiString::Append, allow_raw_pointers())
         .function("clear", &aiString::Clear)
-        .function("c_str", &aiString::C_Str, allow_raw_pointers())
+        //.function("c_str", &aiString::C_Str, allow_raw_pointers())
+        .function("str", &aiStringEmbind::str)
         .function("getLength", &aiStringEmbind::getLength)
         .function("setLength", &aiStringEmbind::setLength)
-        .function("getData", &aiStringEmbind::getData, allow_raw_pointers())
+        //.function("getData", &aiStringEmbind::getData, allow_raw_pointers())
         ;
     
     enum_<aiReturn>("aiReturn")

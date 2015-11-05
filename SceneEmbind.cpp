@@ -36,7 +36,7 @@ namespace aiSceneEmbind
 }
 
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_scene)
 {
 	class_<aiNode>("aiNode")
 		.constructor<>()

@@ -21,7 +21,7 @@ namespace aiLightEmbind
     DefineGetterSetter(aiLight, float, mAngleOuterCone, AngleOuterCone)
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_light)
 {   
     enum_<aiLightSourceType>("aiLightSourceType")
         .value("UNDEFINED", aiLightSource_UNDEFINED)

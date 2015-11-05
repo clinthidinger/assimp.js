@@ -54,7 +54,7 @@ namespace aiMatrix4x4Embind
     }
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_matrix4x4)
 {   
     class_<aiMatrix4x4>("aiMatrix4x4")
         .constructor<>()

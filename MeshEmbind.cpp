@@ -4,10 +4,15 @@
 #include "assimp/mesh.h"
 
 using namespace emscripten;
-using namespace Assimp;
+
+namespace aiMeshEmbind
+{
+	
+}
 
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+
+EMSCRIPTEN_BINDINGS(assimp_mesh)
 {
 	class_<aiMesh>("aiMesh")
 	    .property("mPrimitiveTypes", &aiMesh::mPrimitiveTypes)

@@ -22,12 +22,12 @@ namespace aiColor4DEmbind
     }
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_color4)
 {
 	class_<aiColor4D>("aiColor4D")
 		.constructor()
 		.constructor<TReal, TReal, TReal, TReal>()
-    	.constructor<TReal>()
+    	//.constructor<TReal>()
     	.constructor<const aiColor4D&>()
     	.function("op_plus_equals", &aiColor4D::operator+=)
     	.function("op_minus_equals", &aiColor4D::operator-=)

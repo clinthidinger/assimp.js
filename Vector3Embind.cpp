@@ -22,12 +22,11 @@ namespace aiVector3DEmbind
     }
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_vector3)
 {	
      class_<aiVector3D>("aiVector3D")
         .constructor<>()
         .constructor<TReal, TReal, TReal>()
-        .constructor<TReal>()
         .constructor<const aiVector3D&>()
         .function("op_plus_equals", &aiVector3D::operator+=)
         .function("op_minus_equals", &aiVector3D::operator-=)

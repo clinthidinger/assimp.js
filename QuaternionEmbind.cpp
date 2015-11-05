@@ -25,15 +25,15 @@ namespace aiQuaternionEmbind
 }
 
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_quaternion)
 {	
     class_<aiQuaternion>("aiQuaternion")
         .constructor<>()
         .constructor<TReal, TReal, TReal, TReal>()
         .constructor<const aiMatrix3x3t<TReal>&>()
-        .constructor<TReal, TReal, TReal>()
+        //!!!.constructor<TReal, TReal, TReal>()
         .constructor<aiVector3D, TReal>()
-        .constructor<aiVector3D>()
+        //!!!.constructor<aiVector3D>()
         .constructor<const aiQuaternion&>()
         .function("op_mult", &aiQuaternion::operator*)
         .function("op_equal_to", &aiQuaternion::operator==)

@@ -6,7 +6,6 @@
 #include "assimp/types.h"
 
 using namespace emscripten;
-//using namespace Assimp;
 
 namespace aiUVTransformEmbind
 {
@@ -107,14 +106,8 @@ namespace aiMaterialEmbind
 }
 
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_material)
 {	
-    //enum_<aiReturn>("aiReturn")
-    //    .value("SUCCESS", aiReturn_SUCCESS)
-    //    .value("FAILURE", aiReturn_FAILURE)
-    //    .value("OUTOFMEMORY", aiReturn_OUTOFMEMORY)
-    //    ;
-
     enum_<aiTextureOp>("aiTextureOp")
         .value("Multiply", aiTextureOp_Multiply)
         .value("Add", aiTextureOp_Add)

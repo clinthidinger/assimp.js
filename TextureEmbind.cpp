@@ -25,9 +25,12 @@ namespace aiTextureEmbind
 {
     DefineGetterSetter(aiTexture, unsigned int, mWidth, Width)
     DefineGetterSetter(aiTexture, unsigned int, mHeight, Height)
-    DefineGetter(aiTexture, const char *, achFormatHint, AchFormatHint)
     DefineGetterSetter(aiTexture, aiTexel *, pcData, Data)
 
+    std::string getAchFormatHint(const aiTexture &texture)
+    {
+        return std::string(texture.achFormatHint);
+    }
 
     aiTexel *at(aiTexture &texture, unsigned int index)
     {
@@ -41,7 +44,7 @@ namespace aiTextureEmbind
     }
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_texture)
 {	
     class_<aiTexel>("aiTexel")
         .function("op_equal_to", &aiTexel::operator==)

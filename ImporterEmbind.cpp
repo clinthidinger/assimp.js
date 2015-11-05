@@ -23,7 +23,7 @@ namespace ImporterEmbind
 	}
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_importer)
 {
 	class_<Importer>("Importer")
 		.constructor<>()

@@ -56,7 +56,7 @@ namespace aiAnimationEmbind
     DefineGetterSetter(aiAnimation, aiMeshAnim**, mMeshChannels, MeshChannels)
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_anim)
 {       
     class_<aiVectorKey>("aiVectorKey")
         .constructor<>()

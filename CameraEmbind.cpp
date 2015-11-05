@@ -18,10 +18,10 @@ namespace aiCameraEmbind
     DefineGetterSetter(aiCamera, float, mAspect, Aspect)
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_camera)
 {	
     class_<aiCamera>("aiCamera")
-        .constructor<aiCamera>()
+        .constructor<>()
         .function("getCameraMatrix", &aiCamera::GetCameraMatrix)
         .function("getName", &aiCameraEmbind::getName)
         .function("setName", &aiCameraEmbind::setName)

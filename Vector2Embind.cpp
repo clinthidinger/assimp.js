@@ -23,12 +23,11 @@ namespace aiVector2DEmbind
 }
 
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_vector2)
 {	
     class_<aiVector2D>("aiVector2D")
         .constructor<>()
         .constructor<TReal, TReal>()
-        .constructor<TReal>()
         .constructor<const aiVector2D&>()
         .function("op_plus_equals", &aiVector2D::operator+=)
         .function("op_minus_equals", &aiVector2D::operator-=)

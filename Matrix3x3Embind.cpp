@@ -39,7 +39,7 @@ namespace aiMatrix3x3Embind
     }
 }
 
-EMSCRIPTEN_BINDINGS(ASSIMP)
+EMSCRIPTEN_BINDINGS(assimp_matrix3x3)
 {   
     class_<aiMatrix3x3>("aiMatrix3x3")
         .constructor<>()
