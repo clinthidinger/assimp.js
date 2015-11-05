@@ -22,6 +22,18 @@ namespace aiQuaternionEmbind
         q.y = y;
         q.z = z;
     }
+    void setFromEuler(aiQuaternion &q, TReal x, TReal, TReal y, TReal z)
+    {
+        q = aiQuaternion(x, y, z);
+    }
+    void setFromAngleAxis(aiQuaternion &q, const aiVector3D &axis, TReal angle)
+    {
+        q = aiQuaternion(axis, angle);
+    }
+    void setFromRotationMatrix(aiQuaternion &q, const aiMatrix3x3 &mtx)
+    {
+        q = aiQuaternion(mtx);
+    }
 }
 
 
@@ -30,10 +42,10 @@ EMSCRIPTEN_BINDINGS(assimp_quaternion)
     class_<aiQuaternion>("aiQuaternion")
         .constructor<>()
         .constructor<TReal, TReal, TReal, TReal>()
-        .constructor<const aiMatrix3x3t<TReal>&>()
-        //!!!.constructor<TReal, TReal, TReal>()
-        .constructor<aiVector3D, TReal>()
-        //!!!.constructor<aiVector3D>()
+        //.constructor<const aiMatrix3x3t<TReal>&>()
+        //.constructor<TReal, TReal, TReal>()
+        //.constructor<aiVector3D, TReal>()
+        //.constructor<aiVector3D>()
         .constructor<const aiQuaternion&>()
         .function("op_mult", &aiQuaternion::operator*)
         .function("op_equal_to", &aiQuaternion::operator==)
@@ -53,5 +65,8 @@ EMSCRIPTEN_BINDINGS(assimp_quaternion)
         .function("getW", &aiQuaternionEmbind::getW)
         .function("setW", &aiQuaternionEmbind::setW)
         .function("set", &aiQuaternionEmbind::set)
+        .function("setFromEuler", &aiQuaternionEmbind::setFromEuler)
+        .function("setFromAngleAxis", &aiQuaternionEmbind::setFromAngleAxis)
+        .function("setFromRotationMatrix", &aiQuaternionEmbind::setFromRotationMatrix)
         ;
 } // end EMSCRIPTEN_BINDINGS
