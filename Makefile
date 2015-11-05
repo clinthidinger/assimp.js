@@ -4,7 +4,7 @@ CFLAGS=-I. -Iassimp/include -Iassimp/code --bind -std=c++11 -s EXPORT_NAME="'ASS
 
 OBJ = assimp.js
 SRC = AnimEmbind.cpp CameraEmbind.cpp Color4Embind.cpp ExporterEmbind.cpp LightEmbind.cpp ImporterEmbind.cpp \
-      MaterialEmbind.cpp Matrix3x3Embind.cpp Matrix4x4Embind.cpp MeshEmbind.cpp QuaternionEmbind.cpp \
+      MaterialEmbind.cpp Matrix3x3Embind.cpp Matrix4x4Embind.cpp MeshEmbind.cpp PostProcessEmbind.cpp QuaternionEmbind.cpp \
       SceneEmbind.cpp TextureEmbind.cpp TypesEmbind.cpp Vector2Embind.cpp Vector3Embind.cpp
 
 #SRC = AnimEmbind.cpp CameraEmbind.cpp TypesEmbind.cpp
