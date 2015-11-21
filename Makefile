@@ -1,11 +1,14 @@
 EMCC=emcc
 #EMCC=EMCC_DEBUG=1 emcc -v
 IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp/contrib \
-           -Iassimp/contrib/openddlparser/include -Iinclude
+           -Iassimp/contrib/openddlparser/include -Iassimp/contrib/clipper -Iassimp/contrib/ConvertUTF \
+           -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
+           -Iinclude
 EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1
 # -s MODULARIZE=1 
 #CFLAGS=$(EFLAGS) -std=c++11 
-CFLAGS=$(EFLAGS) -std=c++11 -g4 --js-opts 0
+CPPFLAGS=$(EFLAGS) -std=c++11 -g4 --js-opts 0 
+CFLAGS=$(EFLAGS) -g4 --js-opts 0 -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
 LDFLAGS_FULL=$(EFLAGS)
 #LDFLAGS_MIN=$(EFLAGS) -O2 --closure 1 
 LDFLAGS_MIN=$(EFLAGS) -O2
@@ -178,6 +181,36 @@ assimp/code/STLLoader.cpp \
 assimp/code/OpenGEXExporter.cpp \
 assimp/code/OpenGEXImporter.cpp
 
+ASSIMP_CONTRIB_SRC = \
+assimp/contrib/clipper/clipper.cpp \
+assimp/contrib/irrXML/irrXML.cpp \
+assimp/contrib/poly2tri/poly2tri/common/shapes.cc \
+assimp/contrib/poly2tri/poly2tri/sweep/advancing_front.cc \
+assimp/contrib/poly2tri/poly2tri/sweep/cdt.cc \
+assimp/contrib/poly2tri/poly2tri/sweep/sweep.cc \
+assimp/contrib/poly2tri/poly2tri/sweep/sweep_context.cc \
+assimp/contrib/unzip/ioapi.c \
+assimp/contrib/unzip/unzip.c \
+assimp/contrib/zlib/adler32.c \
+assimp/contrib/zlib/compress.c \
+assimp/contrib/zlib/crc32.c \
+assimp/contrib/zlib/deflate.c \
+assimp/contrib/zlib/gzclose.c \
+assimp/contrib/zlib/gzlib.c \
+assimp/contrib/zlib/gzread.c \
+assimp/contrib/zlib/gzwrite.c \
+assimp/contrib/zlib/infback.c \
+assimp/contrib/zlib/inffast.c \
+assimp/contrib/zlib/inflate.c \
+assimp/contrib/zlib/inftrees.c \
+assimp/contrib/zlib/trees.c \
+assimp/contrib/zlib/uncompr.c \
+assimp/contrib/zlib/zutil.c
+
+#assimp/contrib/ConvertUTF/ConvertUTF.c \
+#
+#
+
 # MODULARIZE
 # COPY zconf.h
 #OBJ = assimp.js
@@ -213,9 +246,15 @@ src/Vector3Embind.cpp
 #ASSIMPSRC := $(shell find assimp/code ! -name "C4DImporter.cpp" -name "*.cpp")
 #ASSIMPSRC = assimp/code/*.cpp
 #SRC = $(ASSIMPSRC) $(EMBINDSRC)
-SRC = $(EMBINDSRC) $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
+SRC = $(EMBINDSRC) $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC) $(ASSIMP_CONTRIB_SRC)
 #SRC = $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
-OBJ = $(SRC:.cpp=.bc)
+#OBJ = $(SRC:.cpp=.bc)
+#OBJ = $($($(SRC:.cpp=.bc):.cc=.bc):.c=.bc)
+#OBJ = $(SRC:.cpp=.bc)
+#OBJ = $(OBJ:.cc=.bc)
+#OBJ = $(OBJ:.c=.bc)
+OBJ = $(addsuffix .bc, $(basename $(SRC)))
+#OBJ = $(OBJ_CPP) $(OBJ_CC) $(OBJ_C)
 TARGET = assimp.js
 # TODO SRC = src/*.cpp assimp/code/*.cpp
 
@@ -242,13 +281,20 @@ assimp.js: $(OBJ)
 #all: $(SRC)
 
 #.cpp.bc:
+
 %.bc: %.cpp
-	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) -o $@ $^
+	$(EMCC) $(IFLAGS) $(CPPFLAGS) $(DISABLEFLAGS) -o $@ $^
+
+%.bc: %.cc
+	$(EMCC) $(IFLAGS) $(CPPFLAGS) -o $@ $^
+
+%.bc: %.c
+	$(EMCC) $(IFLAGS) $(CFLAGS) -o $@ $^		
 
 .PHONY: clean
 
-clean:
-	rm -f $(OBJ) $(TARGET)
+#clean:
+#	rm -f $(OBJ) $(TARGET)
 
 #emcc --bind  -std=c++11 -o assimp.js -Iassimp/include/ -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1 -Dprivate=public assimpEmbind.cpp	
 #incstructions
