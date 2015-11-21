@@ -1,11 +1,14 @@
 EMCC=emcc
+#EMCC=EMCC_DEBUG=1 emcc -v
 IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp/contrib \
-           -Iassimp/contrib/openddlparser/include -Iassimp/build
-EFLAGS=--bind 
-#-s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1 -s MODULARIZE=1
-CFLAGS=-llvm-opts=2 -std=c++11 
-LDFLAGS_FULL=$(EFLAGS) --memory-init-file 0
-LDFLAGS_MIN=$(EFLAGS) -O2 --closure 1 --memory-init-file 0
+           -Iassimp/contrib/openddlparser/include -Iinclude
+EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1
+# -s MODULARIZE=1 
+#CFLAGS=$(EFLAGS) -std=c++11 
+CFLAGS=$(EFLAGS) -std=c++11 -g4 --js-opts 0
+LDFLAGS_FULL=$(EFLAGS)
+#LDFLAGS_MIN=$(EFLAGS) -O2 --closure 1 
+LDFLAGS_MIN=$(EFLAGS) -O2
 
 DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_X_IMPORTER=1 \
@@ -150,11 +153,30 @@ assimp/code/VertexTriangleAdjacency.cpp
 ASSIMP_FILE_FORMAT_SRC = \
 assimp/code/ColladaExporter.cpp \
 assimp/code/ColladaLoader.cpp \
-assimp/code/ColladaParser.cpp
-
-
-
-
+assimp/code/ColladaParser.cpp \
+assimp/code/ObjExporter.cpp \
+assimp/code/ObjFileImporter.cpp \
+assimp/code/ObjFileMtlImporter.cpp \
+assimp/code/ObjFileParser.cpp \
+assimp/code/FBXAnimation.cpp \
+assimp/code/FBXBinaryTokenizer.cpp \
+assimp/code/FBXConverter.cpp \
+assimp/code/FBXDeformer.cpp \
+assimp/code/FBXDocument.cpp \
+assimp/code/FBXDocumentUtil.cpp \
+assimp/code/FBXImporter.cpp \
+assimp/code/FBXMaterial.cpp \
+assimp/code/FBXMeshGeometry.cpp \
+assimp/code/FBXModel.cpp \
+assimp/code/FBXNodeAttribute.cpp \
+assimp/code/FBXParser.cpp \
+assimp/code/FBXProperties.cpp \
+assimp/code/FBXTokenizer.cpp \
+assimp/code/FBXUtil.cpp \
+assimp/code/STLExporter.cpp \
+assimp/code/STLLoader.cpp \
+assimp/code/OpenGEXExporter.cpp \
+assimp/code/OpenGEXImporter.cpp
 
 # MODULARIZE
 # COPY zconf.h
@@ -189,11 +211,12 @@ src/Vector3Embind.cpp
  #EXCLUDE=$(subst assimp/code/C4DImporter.cpp,,${ASSIMPSRC})
  # Exclude c4d since it is for msvc only.
 #ASSIMPSRC := $(shell find assimp/code ! -name "C4DImporter.cpp" -name "*.cpp")
-ASSIMPSRC = assimp/code/*.cpp
+#ASSIMPSRC = assimp/code/*.cpp
 #SRC = $(ASSIMPSRC) $(EMBINDSRC)
-SRC := $(EMBINDSRC) $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
+SRC = $(EMBINDSRC) $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
 #SRC = $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
 OBJ = $(SRC:.cpp=.bc)
+TARGET = assimp.js
 # TODO SRC = src/*.cpp assimp/code/*.cpp
 
 #SRC = AnimEmbind.cpp CameraEmbind.cpp TypesEmbind.cpp
@@ -202,7 +225,7 @@ OBJ = $(SRC:.cpp=.bc)
 #all: $(SRC) $(LIB)
 
 assimp.js: $(OBJ) 
-	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) $(LDFLAGS_FULL) $(OBJ) -o assimp.js
+	$(EMCC) $(LDFLAGS_FULL) $(OBJ) -o $(TARGET)
 
 #.cpp.bc:
 #	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) $(LDFLAGS_FULL)  $< -o $@
@@ -220,12 +243,12 @@ assimp.js: $(OBJ)
 
 #.cpp.bc:
 %.bc: %.cpp
-	$(EMCC) $(IFLAGS) $(CFLAGS) $(LDFLAGS_FULL) -o $@ $^
+	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) -o $@ $^
 
 .PHONY: clean
 
 clean:
-	rm -f assimp.js
+	rm -f $(OBJ) $(TARGET)
 
 #emcc --bind  -std=c++11 -o assimp.js -Iassimp/include/ -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1 -Dprivate=public assimpEmbind.cpp	
 #incstructions

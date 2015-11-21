@@ -7,3 +7,13 @@
 #define DefineGetterSetter(ClassName, MemberType, MemberName, FuncName) \
 	DefineGetter(ClassName, MemberType, MemberName, FuncName) \
 	DefineSetter(ClassName, MemberType, MemberName, FuncName)
+
+class YoMama
+	{
+	public:
+		YoMama()
+		{
+
+		}
+		int y;
+	};

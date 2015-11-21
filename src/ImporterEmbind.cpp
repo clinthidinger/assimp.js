@@ -1,12 +1,12 @@
 
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
+#include "assimp/postprocess.h"
 #include "assimp/Importer.hpp"
 #include "assimp/cimport.h"
 
 using namespace emscripten;
 using namespace Assimp;
-
 
 namespace aiPropertyStoreEmbind
 {
@@ -20,6 +20,22 @@ namespace ImporterEmbind
 		aiString szOut;
 		importer.GetExtensionList(szOut);
 		return szOut;
+	}
+
+	
+
+	//const aiScene *readFile(Importer &importer, const std::string &pFile, unsigned int pFlags)
+	//std::string readFile(Importer &importer, const std::string &pFile, unsigned int pFlags)
+	//{
+	//	const aiScene *scene = importer.ReadFile(pFile.c_str(), aiProcessPreset_TargetRealtime_Quality);//pFlags);
+	//	return std::string(importer.GetErrorString());//(scene != nullptr);//new aiScene();
+	//}
+	//const aiScene *readFileFromMemory(Importer &importer, const std::string &fileData, unsigned int pFlags)
+	int readFileFromMemory(Importer &importer, const std::string &fileData, unsigned int pFlags)
+	{
+		 const aiScene *scene = importer.ReadFileFromMemory(fileData.c_str(), fileData.size(), pFlags, "");
+		 //return scene;
+		 return 1;
 	}
 }
 
@@ -49,15 +65,16 @@ EMSCRIPTEN_BINDINGS(assimp_importer)
 	    .function("getProgressHandler", &Importer::GetProgressHandler, allow_raw_pointers())
 	    .function("isDefaultProgressHandler", &Importer::IsDefaultProgressHandler)
 	    .function("validateFlags", &Importer::ValidateFlags)
-	    .function("readFile", select_overload<const aiScene *(const char*, unsigned int)>(&Importer::ReadFile), allow_raw_pointers())
-	    .function("readFile", select_overload<const aiScene *(const std::string&, unsigned int)>(&Importer::ReadFile), allow_raw_pointers())
-	    .function("readFileFromMemory", &Importer::ReadFileFromMemory, allow_raw_pointers())
+	    //.function("readFile", select_overload<const aiScene *(const char*, unsigned int)>(&Importer::ReadFile), allow_raw_pointers())
+	    //.function("readFile", select_overload<const aiScene *(const std::string&, unsigned int)>(&Importer::ReadFile), allow_raw_pointers())
+	    //.function("readFile", &ImporterEmbind::readFile, allow_raw_pointers())
+	    .function("readFileFromMemory", &ImporterEmbind::readFileFromMemory, allow_raw_pointers())
 	    .function("applyPostProcessing", &Importer::ApplyPostProcessing, allow_raw_pointers())
 	    .function("freeScene", &Importer::FreeScene)
 	    .function("getErrorString", &Importer::GetErrorString, allow_raw_pointers())
 	    .function("getScene", &Importer::GetScene, allow_raw_pointers())
 	    .function("getOrphanedScene", &Importer::GetOrphanedScene, allow_raw_pointers())
-	    .function("isExtensionSupported", select_overload<bool (const char*) const>(&Importer::IsExtensionSupported), allow_raw_pointers())
+	    //.function("isExtensionSupported", select_overload<bool (const char*) const>(&Importer::IsExtensionSupported), allow_raw_pointers())
 	    .function("isExtensionSupported", select_overload<bool (const std::string&) const>(&Importer::IsExtensionSupported), allow_raw_pointers())
 	    .function("getExtensionList", select_overload<void (aiString&) const>(&Importer::GetExtensionList), allow_raw_pointers())
 	    .function("getExtensionList", &ImporterEmbind::getExtensionList, allow_raw_pointers())
