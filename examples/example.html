@@ -62,9 +62,9 @@
           var exporter = new Module.Exporter();
           var scene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
           console.log(scene)
-          var ext = "dae";
+          var format = "collada"; //! @see Exporter.cpp line 98 for supported formats.
           var numAnim = scene.getNumAnimations();
-          var outStr = exporter.exportToString(scene, "dae", null);
+          var outStr = exporter.exportToString(scene, format, null);
           var h = 0;
       }
 

@@ -50,6 +50,7 @@ namespace ExporterEmbind
 	}
 
 	std::string exportToString(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties)
+	//bool exportToString(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties, std::string &outStr)
 	{
 		std::string outStr;
 		exportTo<std::string>(exporter, scene, formatId, properties, outStr);
