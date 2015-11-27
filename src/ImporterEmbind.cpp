@@ -4,6 +4,7 @@
 #include "assimp/postprocess.h"
 #include "assimp/Importer.hpp"
 #include "assimp/cimport.h"
+#include "assimp/scene.h"
 
 using namespace emscripten;
 using namespace Assimp;
@@ -31,11 +32,11 @@ namespace ImporterEmbind
 	//	return std::string(importer.GetErrorString());//(scene != nullptr);//new aiScene();
 	//}
 	//const aiScene *readFileFromMemory(Importer &importer, const std::string &fileData, unsigned int pFlags)
-	int readFileFromMemory(Importer &importer, const std::string &fileData, unsigned int pFlags)
+	aiScene *readFileFromMemory(Importer &importer, const std::string &fileData, unsigned int pFlags)
 	{
 		 const aiScene *scene = importer.ReadFileFromMemory(fileData.c_str(), fileData.size(), pFlags, "");
-		 //return scene;
-		 return 1;
+		 return const_cast<aiScene *>(scene); // const_cast unfortunately needed here.
+		 //return 1;
 	}
 }
 

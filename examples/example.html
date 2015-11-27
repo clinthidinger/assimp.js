@@ -59,8 +59,13 @@
 
       function displayContents(contents) {
           var importer = new Module.Importer();
+          var exporter = new Module.Exporter();
           var scene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
           console.log(scene)
+          var ext = "dae";
+          var numAnim = scene.getNumAnimations();
+          var outStr = exporter.exportToString(scene, "dae", null);
+          var h = 0;
       }
 
   	</script>

@@ -1,7 +1,10 @@
 
 #include <emscripten/bind.h>
+#include <algorithm>
+#include <string>
 #include "utilEmbind.h"
 #include "assimp/Exporter.hpp"
+#include "assimp/scene.h"
 
 using namespace emscripten;
 using namespace Assimp;
@@ -20,6 +23,44 @@ namespace aiExportDataBlobEmbind
 	DefineGetterSetter(aiExportDataBlob, void*, data, Data)
 	DefineGetterSetter(aiExportDataBlob, aiString, name, Name)
 	DefineGetterSetter(aiExportDataBlob, aiExportDataBlob *, next, Next)
+}
+
+namespace ExporterEmbind
+{
+	template<typename T>
+	bool exportTo(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties, T &outBuffer)
+	{
+		const aiExportDataBlob *blob = exporter.ExportToBlob(scene, formatId.c_str(), 0, properties);
+		if(blob == nullptr)
+		{
+			return false;
+		}
+		
+		const char *data = reinterpret_cast<char *>(blob->data);
+		if(data == nullptr)
+		{
+			return false;
+		}
+
+		outBuffer.resize(blob->size);
+		std::copy(data, data + blob->size, outBuffer.begin());
+		// @note blob->next may point to extra files (i.e. material files).
+
+		return true;
+	}
+
+	std::string exportToString(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties)
+	{
+		std::string outStr;
+		exportTo<std::string>(exporter, scene, formatId, properties, outStr);
+		//exportTo<std::string>(exporter, scene, "dae", nullptr, outStr);
+		return outStr;
+	}
+
+	bool exportToVector(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties, std::vector<unsigned char> &outVec)
+	{
+		return exportTo<std::vector<unsigned char>>(exporter, scene, formatId, properties, outVec);
+	}
 }
 
 EMSCRIPTEN_BINDINGS(ASSIMP)
@@ -70,10 +111,12 @@ EMSCRIPTEN_BINDINGS(ASSIMP)
 		//.function("setIOHandler", &Exporter::SetIOHandler, allow_raw_pointers())
 	    //.function("getIOHandler", &Exporter::GetIOHandler, allow_raw_pointers())
 		.function("isDefaultIOHandler", &Exporter::IsDefaultIOHandler)
-    	.function("ExportToBlob", select_overload<const aiExportDataBlob *(const aiScene*, const char*, unsigned int, const ExportProperties*)>(&Exporter::ExportToBlob), allow_raw_pointers())
-    	.function("ExportToBlob", select_overload<const aiExportDataBlob *(const aiScene*, const std::string&, unsigned int, const ExportProperties*)>(&Exporter::ExportToBlob), allow_raw_pointers())
-		.function("export", select_overload<aiReturn(const aiScene*, const char*, const char*, unsigned int, const ExportProperties*)>(&Exporter::Export), allow_raw_pointers())
-    	.function("export", select_overload<aiReturn(const aiScene*, const std::string&, const std::string&,  unsigned int, const ExportProperties*)>(&Exporter::Export), allow_raw_pointers())
+    	//.function("exportToBlob", select_overload<const aiExportDataBlob *(const aiScene*, const char*, unsigned int, const ExportProperties*)>(&Exporter::ExportToBlob), allow_raw_pointers())
+    	.function("exportToBlob", select_overload<const aiExportDataBlob *(const aiScene*, const std::string&, unsigned int, const ExportProperties*)>(&Exporter::ExportToBlob), allow_raw_pointers())
+		//.function("export", select_overload<aiReturn(const aiScene*, const char*, const char*, unsigned int, const ExportProperties*)>(&Exporter::Export), allow_raw_pointers())
+    	//.function("export", select_overload<aiReturn(const aiScene*, const std::string&, const std::string&,  unsigned int, const ExportProperties*)>(&Exporter::Export), allow_raw_pointers())
+    	.function("exportToString", &ExporterEmbind::exportToString, allow_raw_pointers())
+    	.function("exportToVector", &ExporterEmbind::exportToVector, allow_raw_pointers())
 		.function("getErrorString", &Exporter::GetErrorString, allow_raw_pointers())
 	    .function("getBlob", &Exporter::GetBlob, allow_raw_pointers())
 		.function("getOrphanedBlob", &Exporter::GetOrphanedBlob, allow_raw_pointers())
