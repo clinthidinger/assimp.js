@@ -222,8 +222,6 @@ EMBINDSRC = \
 src/AnimEmbind.cpp \
 src/CameraEmbind.cpp \
 src/Color4Embind.cpp \
-src/ExporterEmbind.cpp \
-src/ImporterEmbind.cpp \
 src/LightEmbind.cpp \
 src/MaterialEmbind.cpp \
 src/Matrix3x3Embind.cpp \
@@ -235,7 +233,9 @@ src/SceneEmbind.cpp \
 src/TextureEmbind.cpp \
 src/TypesEmbind.cpp \
 src/Vector2Embind.cpp \
-src/Vector3Embind.cpp
+src/Vector3Embind.cpp \
+src/ImporterEmbind.cpp \
+src/ExporterEmbind.cpp 
 
 
  #ASSIMPSRC = $(filter-out src/bar.cpp, $(wildcard assimp/code/*.cpp))
@@ -293,8 +293,8 @@ assimp.js: $(OBJ)
 
 .PHONY: clean
 
-#clean:
-#	rm -f $(OBJ) $(TARGET)
+clean:
+	rm -f $(OBJ) $(TARGET)
 
 #emcc --bind  -std=c++11 -o assimp.js -Iassimp/include/ -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1 -Dprivate=public assimpEmbind.cpp	
 #incstructions
