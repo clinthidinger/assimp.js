@@ -9,20 +9,27 @@ using namespace emscripten;
 namespace aiFaceEmbind
 {
 	DefineGetterSetter(aiFace, unsigned int, mNumIndices, NumIndices)
-	DefineArrayGetterSetter(aiFace, unsigned int, mIndices, Indices, aiFace.mNumIndices)
+	DefineArrayGetterSetter(aiFace, unsigned int, mIndices, Indices, object.mNumIndices)
 }
 
 namespace aiVertexWeightEmbind
 {
-	DefineGetterSetter(aiVertexWeight, unsigned int, VertexId, mVertexId)
+	DefineGetterSetter(aiVertexWeight, unsigned int, mVertexId, VertexId)
 	DefineGetterSetter(aiVertexWeight, float, mWeight, Weight)
 }
 
 namespace aiBoneEmbind
 {
-	DefineGetterSetter(aiBone, aiString, mName, Name)
+	std::string getName(const aiBone &bone)
+	{
+		return std::string(bone.mName.C_Str());
+	}
+	void setName(aiBone &bone, const std::string &name)
+	{
+		bone.mName = aiString(name);
+	}
 	DefineGetterSetter(aiBone, unsigned int, mNumWeights, NumWeights)
-	DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, aiBone.mNumWeights)
+	DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, object.mNumWeights)
 	DefineConstGetterSetter(aiBone, aiMatrix4x4, mOffsetMatrix, OffsetMatrix)
 }
 
@@ -30,17 +37,36 @@ namespace aiMeshEmbind
 {
 	DefineGetterSetter(aiMesh, unsigned int, mPrimitiveTypes, PrimitiveTypes)
 	DefineGetterSetter(aiMesh, unsigned int, mNumVertices, NumVertices)
-	DefineGetterSetter(aiMesh, aiVector3D *, mVertices, Vertices)
-	DefineGetterSetter(aiMesh, unsigned int, mNumNormals, NumNormals)
-	DefineGetterSetter(aiMesh, aiVector3D *, mNormals, Normals)
-	DefineGetterSetter(aiMesh, unsigned int, mNumTangents, NumTangents)
-	DefineGetterSetter(aiMesh, aiVector3D *, mTangents, Tangents)
-	DefineGetterSetter(aiMesh, unsigned int, mNumBitangents, NumBitangents)
-	DefineGetterSetter(aiMesh, aiVector3D *, mBitangents, Bitangents)
-	DefineGetterSetter(aiMesh, unsigned int, mNumColors, NumColors)
-	DefineGetterSetter(aiMesh, aiVector4D *, mColors, Colors)
-	DefineGetterSetter(aiMesh, unsigned int, mTextureCoords, NumTextureCoords)
-	DefineGetterSetter(aiMesh, aiVector3D *, mTextureCoords, TextureCoords)
+	DefineGetterSetter(aiMesh, unsigned int, mNumFaces, NumFaces)
+	DefineArrayGetterSetter(aiMesh, aiVector3D, mVertices, Vertices, object.mNumVertices)
+	DefineArrayGetterSetter(aiMesh, aiVector3D, mNormals, Normals, object.mNumVertices)
+	DefineArrayGetterSetter(aiMesh, aiVector3D, mTangents, Tangents, object.mNumVertices)
+	DefineArrayGetterSetter(aiMesh, aiVector3D, mBitangents, Bitangents, object.mNumVertices)
+	DefineArraySetGetterSetter(aiMesh, aiColor4D, mColors, Colors, object.mNumVertices, AI_MAX_NUMBER_OF_COLOR_SETS)
+	unsigned int getNumUVComponents(const aiMesh &mesh, unsigned int setIndex)
+	{
+		return mesh.mNumUVComponents[setIndex];
+	}
+	void setNumUVComponents(aiMesh &mesh, unsigned int setIndex, unsigned int count)
+	{
+		mesh.mNumUVComponents[setIndex] = count;
+	}
+
+	DefineArraySetGetterSetter(aiMesh, aiVector3D, mTextureCoords, TextureCoords, object.mNumVertices, AI_MAX_NUMBER_OF_TEXTURECOORDS)
+
+	DefineArrayGetterSetter(aiMesh, aiFace, mFaces, Faces, object.mNumFaces)
+	DefineGetterSetter(aiMesh, unsigned int, mNumBones, NumBones)
+	DefineArrayGetterSetter(aiMesh, aiBone, mBones, Bones, object.mNumBones)
+	DefineGetterSetter(aiMesh, unsigned int, mMaterialIndex, MaterialIndex)
+	DefineGetterSetter(aiMesh, unsigned int, mName, Name)
+	std::string getName(const aiMesh &mesh)
+	{
+		return std::string(mesh.mName.C_Str());
+	}
+	void setName(aiMesh &mesh, const std::string &name)
+	{
+		mesh.mName = aiString(name);
+	}
 }
 
 EMSCRIPTEN_BINDINGS(assimp_mesh)
@@ -57,19 +83,19 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	class_<aiVertexWeight>("aiVertexWeight")
 		.constructor<>()
 		.constructor<unsigned int, float>()
-		.function("getVertexId", &aiFaceEmbind::getVertexId)
-		.function("setVertexId", &aiFaceEmbind::setVertexId)
-		.function("getWeight", &aiFaceEmbind::getWeight)
-		.function("setWeight", &aiFaceEmbind::setWeight)
+		.function("getVertexId", &aiVertexWeightEmbind::getVertexId)
+		.function("setVertexId", &aiVertexWeightEmbind::setVertexId)
+		.function("getWeight", &aiVertexWeightEmbind::getWeight)
+		.function("setWeight", &aiVertexWeightEmbind::setWeight)
 		;
 
 	class_<aiBone>("aiBone")
 		.constructor<>()
 		.constructor<const aiBone&>()
-		.function("getName", &aiFaceEmbind::getName)
-		.function("setName", &aiFaceEmbind::setName)
-		.function("getNumWeights", &aiFaceEmbind::getNumWeights)
-		.function("setNumWeights", &aiFaceEmbind::setNumWeights)
+		.function("getName", &aiBoneEmbind::getName)
+		.function("setName", &aiBoneEmbind::setName)
+		.function("getNumWeights", &aiBoneEmbind::getNumWeights)
+		.function("setNumWeights", &aiBoneEmbind::setNumWeights)
 		;
 
 	enum_<aiPrimitiveType>("aiPrimitiveType")
@@ -95,9 +121,10 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("setTangents", &aiMeshEmbind::setTangents)
 	    .function("getBitangents", &aiMeshEmbind::getBitangents)
 	    .function("setBitangents", &aiMeshEmbind::setBitangents)
-	    .function("getColors[AI_MAX_NUMBER_OF_COLOR_SETS]", &aiMeshEmbind::getColors)
-	    .function("getTextureCoords[AI_MAX_NUMBER_OF_TEXTURECOORDS]", &aiMeshEmbind::getTextureCoords)
-	    .function("getNumUVComponents[AI_MAX_NUMBER_OF_TEXTURECOORDS]", &aiMeshEmbind::getNumUVComponents)
+	    .function("getColors", &aiMeshEmbind::getColors)
+	    .function("getTextureCoords", &aiMeshEmbind::getTextureCoords)
+	    .function("getNumUVComponents", &aiMeshEmbind::getNumUVComponents)
+	    .function("setNumUVComponents", &aiMeshEmbind::setNumUVComponents)
 	    .function("getFaces", &aiMeshEmbind::getFaces)
 	    .function("setFaces", &aiMeshEmbind::setFaces)
 	    .function("getNumBones", &aiMeshEmbind::getNumBones)
