@@ -51,14 +51,11 @@ namespace aiMeshEmbind
 	{
 		mesh.mNumUVComponents[setIndex] = count;
 	}
-
 	DefineArraySetGetterSetter(aiMesh, aiVector3D, mTextureCoords, TextureCoords, object.mNumVertices, AI_MAX_NUMBER_OF_TEXTURECOORDS)
-
 	DefineArrayGetterSetter(aiMesh, aiFace, mFaces, Faces, object.mNumFaces)
 	DefineGetterSetter(aiMesh, unsigned int, mNumBones, NumBones)
-	DefineArrayGetterSetter(aiMesh, aiBone, mBones, Bones, object.mNumBones)
+	DefineArrayGetterSetter(aiMesh, aiBone *, mBones, Bones, object.mNumBones)
 	DefineGetterSetter(aiMesh, unsigned int, mMaterialIndex, MaterialIndex)
-	DefineGetterSetter(aiMesh, unsigned int, mName, Name)
 	std::string getName(const aiMesh &mesh)
 	{
 		return std::string(mesh.mName.C_Str());
@@ -78,6 +75,9 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 		.function("setNumIndices", &aiFaceEmbind::setNumIndices)
 		.function("getIndices", &aiFaceEmbind::getIndices)
 		.function("setIndices", &aiFaceEmbind::setIndices)
+		.function("op_equals", &aiFace::operator=)
+		.function("op_equal_to", &aiFace::operator==)
+		.function("op_not_equal_to", &aiFace::operator!=)
 		;
 
 	class_<aiVertexWeight>("aiVertexWeight")
