@@ -57,15 +57,244 @@
       //console.log(scene)
       // console.log(scene);
 
+      function getPolyTriCount( numVerts ) {
+        if( numVerts < 3 ) {
+          return 0; 
+        }
+        return ( numVerts - 2 );
+      }
+
+
+      function triangulatePoly( indices ) {
+        // Also, check https://threejsdoc.appspot.com/doc/three.js/src.source/extras/geometries/TextGeometry.js.html
+        //assert( orderedPointCount >= 3 );
+        var triCount = getPolyTriCount( indices.length ),
+            tris = Array( triCount ),
+            orderedPointCount = indices.length,
+            offsetIndex = 0,
+            base0 = 0 + offsetIndex,
+            base1 = 1 + offsetIndex,
+            lastTri = triCount - 1,
+            vtxIdx,
+            tri,
+            nextTri;
+
+        for( vtxIdx = 0, revVtxIdx = orderedPointCount - 1, triIdx = 0; triIdx < triCount;  ) {
+            tri = [base0, base1, base1 + 1];
+            tris[triIdx] = [indices[tri[0]], indices[tri[1]], indices[tri[2]]];
+            ++triIdx;
+            if( triIdx <= lastTri ) {
+                nextTri = [tri[2], offsetIndex + revVtxIdx--, tri[0]];
+                tris[triIdx] = [indices[nextTri[0]], indices[nextTri[1]], indices[nextTri[2]]];
+                base0 = nextTri[1];
+                base1 = nextTri[0];
+                ++triIdx;
+            }
+        }// end for
+
+        return tris;
+      }
+
+      function loadVertexAttribute3(mesh, array, bufferAttr, numVertices) {
+        for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+          var v = array[vertIdx];
+          bufferAttr.setXYZ( vertIdx, v.getX(), v.getY(), v.getZ() );
+        }
+      }
+
+      function loadPositions(mesh) {
+
+      }
+
+
+      function loadMesh(mesh) {
+          // see BufferGeometry.js fromDirectGeometry()
+        var i,
+            positions,
+            faces,
+            normals,
+            tangents,
+            bitangents,
+            vertexColors,
+            textureCoords,
+            bones,
+            name,
+            index;
+
+        var geom,
+            numVertices,
+            positions,
+            numFaces,
+            faces,
+            face,
+            numIndices,
+            normals,
+            tangents,
+            colors,
+            textureCoors,
+            numBones,
+            bones,
+            vertexPosAttr;
+
+        geom = new THREE.BufferGeometry();
+
+        if (!mesh.hasPositions() || !mesh.hasFaces()) {
+          return geom;
+        }
+
+        numVertices = mesh.getNumVertices();
+        positions = mesh.getVertices();
+        vertexPosAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 );
+        //loadVertexAttribute(mesh, positions, vertexPosAttr, numVertices);
+        for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+          var pos = positions[vertIdx];
+          vertexPosAttr.setXYZ( vertIdx, pos.getX(), pos.getY(), pos.getZ() );
+        }
+        geom.addAttribute( 'position', vertexPosAttr );
+      
+        // Get faces.
+        primType = mesh.getPrimitiveType();
+        numFaces = mesh.getNumFaces();
+        faces = mesh.getFaces();
+        if(primType == Module.aiPrimitiveType.TRIANGLE || primType == Module.aiPrimitiveType.POLYGON) {
+          triCount = 0;
+          for( faceIdx = 0; faceIdx < numFaces; ++faceIdx ) {
+            face = faces[faceIdx];
+            numIndices = face.getNumIndices();
+            triCount += getPolyTriCount(numIndices);
+          }
+
+          triIndicesAttr = new THREE.BufferAttribute( new Uint16Array( triCount * 3 ), 3 ); // check if greater than max uint16
+          
+          faceTriIdx = 0;
+          for( faceIdx = 0; faceIdx < numFaces; ++faceIdx ) {
+            face = faces[faceIdx];
+            numIndices = face.getNumIndices();
+            indices = face.getIndices();
+            //for( indexIdx = 0; indexIdx < numIndices; ++indexIdx ) {
+            //  index = indices[indexIdx];
+            //  //indicesAttr.setX( i++, prevIndex );
+            //}
+
+            var tris = triangulatePoly( indices );
+            var triCount = tris.length;
+            for ( var triIdx = 0; triIdx < triCount; ++triIdx ) {
+              var tri = tris[triIdx];
+              triIndicesAttr.setXYZ( faceTriIdx++, tri[0], tri[1], tri[2] );
+            }
+          }
+        }
+        
+        geom.addAttribute( 'index', triIndicesAttr );
+        //var indicesAttr = new THREE.BufferAttribute( new Uint16Array( numEdgeIndices ), 1 )
+        //var faceTrisAttr = new THREE.BufferAttribute( new Float32Array( numFaceTris * 3 * 3 ), 3 );
+
+        if(mesh.hasNormals()) {
+          normals = mesh.getNormals();
+          vertexNrmAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 );
+          for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+            var nrm = normals[vertIdx];
+            vertexNrmAttr.setXYZ( vertIdx, nrm.getX(), nrm.getY(), nrm.getZ() );
+          }
+          geom.addAttribute( 'normal', vertexNrmAttr );
+        }
+
+        if(mesh.hasTangentsAndBitangents()) {
+          tangents = mesh.getTangents();
+          bitangents = mesh.getBitangents();
+        }
+
+        if(mesh.hasVertexColors()) {
+          colors = mesh.getVertexColors();
+          vertexClrAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 );
+          for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+            var clr = colors[vertIdx];
+            vertexNrmAttr.setXYZ( vertIdx, clr.getX(), clr.getY(), clr.getZ() );
+          }
+          geom.addAttribute( 'color', vertexClrAttr );
+        }
+        if(mesh.hasTextureCoords()) {
+          textureCoords = mesh.getTextureCoords(); // !!! check uv and uv2
+          textureCoordAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 2 ), 2 );
+          for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+            var uv = textureCoords[vertIdx];
+            vertexNrmAttr.setXY( vertIdx, uv.getX(), uv.getY() );
+          }
+          geom.addAttribute( 'uv', vertexNrmAttr );
+        }
+        if(mesh.hasBones()) {
+          bones = mesh.getBones();
+          numBones = mesh.getNumBones();  
+          for( boneIdx = 0; boneIdx < numBones; ++boneIdx ) {
+            bone = bones[boneIdx];
+            numWeights = bone.getNumWeights();
+            weights = bone.getWeights();
+            for( wtIdx = 0; wtIdx < numWeights; ++wtIdx) {
+              weight = weights[weightIdx];
+              //weight.getVertexId();
+              //weight.getWeight();
+            }
+            mtx = bone.getOffsetMatrix();
+          }
+        }
+
+
+         
+   
+         
+        var vertexNrmAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 );
+        var vertexClrAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 ); // 3 or 4??
+        // colors, normals
+
+        for ( var vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
+          var pos = positions[vertIdx];
+          vertexPosAttr.setXYZ( vertIdx, pos.getX(), pos.getY(), pos.getZ() );
+          //colors[i    ]??
+          var nrm = normals[vertIdx];
+          vertexNrm.setXYZ( vertIdx, nrm.getX(), nrm.getY(), nrm.getZ() );
+
+          var color = vertexColors[vertIdx];
+          vertexClrAttr.setXYZ( vertIdx, color.r, color.g, color.b );
+        }
+
+          
+          facesGeom.addAttribute( 'color', vertexColorAttr );
+
+          var name = mesh.getName();
+          var index = mesh.getMaterialIndex();
+      }
+
+
       function displayContents(contents) {
+          var i = 0;
+
           var importer = new Module.Importer();
           var exporter = new Module.Exporter();
           var scene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
-          console.log(scene)
-          var format = "collada"; //! @see Exporter.cpp line 98 for supported formats.
-          var numAnim = scene.getNumAnimations();
-          var outStr = exporter.exportToString(scene, format, null);
-          var h = 0;
+          
+          var numMeshes = scene.getNumMeshes();
+          var numMaterials = scene.getNumMaterials();
+          var numLights = scene.getNumLights();
+          var numAnimations = scene.getNumAnimations();
+          var numTextures = scene.getNumTextures();
+          var numCameras = scene.getNumCameras();
+
+
+          for (i = 0, i < numMeshes, ++i) {
+
+            var mesh = scene.getMeshes()[i];
+            loadMesh(mesh);
+          }
+
+          for (i = 0, i < numMaterials, ++i) {
+            var mat = scene.getMaterials()[i];
+          }
+          for (i = 0, i < numTextures, ++i) {
+            var texture = scene.getTextures()[i];
+          }
+          //var format = "collada"; //! @see Exporter.cpp line 98 for supported formats.
+          //var outStr = exporter.exportToString(scene, format, null);
+          //var h = 0;
       }
 
   	</script>
