@@ -49,8 +49,8 @@ EMSCRIPTEN_BINDINGS(assimp_vector3)
         .function("setX", &aiVector3DEmbind::setX)
         .function("getY", &aiVector3DEmbind::getY)
         .function("setY", &aiVector3DEmbind::setY)
-        .function("getY", &aiVector3DEmbind::getZ)
-        .function("setY", &aiVector3DEmbind::setZ)
+        .function("getZ", &aiVector3DEmbind::getZ)
+        .function("setZ", &aiVector3DEmbind::setZ)
         .function("set", &aiVector3DEmbind::set)
         ;
 } // end EMSCRIPTEN_BINDINGS
