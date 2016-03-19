@@ -69,3 +69,36 @@
 #define DefineArraySetGetterSetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
 	DefineArraySetGetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
 	DefineArraySetSetter(ClassName, MemberType, MemberName, FuncName, Count, Max)
+
+#define DefineArrayIndexGetter(ClassName, MemberType, MemberName, FuncName) \
+	MemberType get##FuncName(const ClassName &object, unsigned int index) \
+	{ \
+		return object.MemberName[index]; \
+	}
+
+#define DefineArrayIndexSetter(ClassName, MemberType, MemberName, FuncName) \
+	void set##FuncName(ClassName &object, unsigned int index, MemberType value) \
+	{ \
+		object.MemberName[index] = value; \
+	}
+#define DefineArrayIndexGetterSetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineArrayIndexGetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineArrayIndexSetter(ClassName, MemberType, MemberName, FuncName)
+
+//????
+#define DefineArrayIndexRefGetter(ClassName, MemberType, MemberName, FuncName) \
+	const MemberType &get##FuncName(const ClassName &object, unsigned int index) \
+	{ \
+		return object.MemberName[index]; \
+	}
+
+#define DefineArrayIndexRefSetter(ClassName, MemberType, MemberName, FuncName) \
+	void set##FuncName(ClassName &object, unsigned int index, const MemberType &value) \
+	{ \
+		object.MemberName[index] = value; \
+	}
+#define DefineArrayIndexRefGetterSetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineArrayIndexRefGetter(ClassName, MemberType, MemberName, FuncName) \
+	DefineArrayIndexRefSetter(ClassName, MemberType, MemberName, FuncName)
+
+

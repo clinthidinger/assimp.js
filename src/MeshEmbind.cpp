@@ -10,6 +10,7 @@ namespace aiFaceEmbind
 {
 	DefineGetterSetter(aiFace, unsigned int, mNumIndices, NumIndices)
 	DefineArrayGetterSetter(aiFace, unsigned int, mIndices, Indices, object.mNumIndices)
+	DefineArrayIndexGetterSetter(aiFace, unsigned int, mIndices, Index)
 }
 
 namespace aiVertexWeightEmbind
@@ -30,6 +31,7 @@ namespace aiBoneEmbind
 	}
 	DefineGetterSetter(aiBone, unsigned int, mNumWeights, NumWeights)
 	DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, object.mNumWeights)
+	DefineArrayIndexRefGetterSetter(aiBone, aiVertexWeight, mWeights, Weight)
 	DefineConstGetterSetter(aiBone, aiMatrix4x4, mOffsetMatrix, OffsetMatrix)
 }
 
@@ -38,10 +40,14 @@ namespace aiMeshEmbind
 	DefineGetterSetter(aiMesh, unsigned int, mPrimitiveTypes, PrimitiveTypes)
 	DefineGetterSetter(aiMesh, unsigned int, mNumVertices, NumVertices)
 	DefineGetterSetter(aiMesh, unsigned int, mNumFaces, NumFaces)
-	DefineArrayGetterSetter(aiMesh, aiVector3D, mVertices, Vertices, object.mNumVertices)
+	//!!! Unbound typeDefineArrayGetterSetter(aiMesh, aiVector3D, mVertices, Vertices, object.mNumVertices)
+	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mVertices, Vertex)
 	DefineArrayGetterSetter(aiMesh, aiVector3D, mNormals, Normals, object.mNumVertices)
+	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mNormals, Normal)
 	DefineArrayGetterSetter(aiMesh, aiVector3D, mTangents, Tangents, object.mNumVertices)
+	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mTangents, Tangent)
 	DefineArrayGetterSetter(aiMesh, aiVector3D, mBitangents, Bitangents, object.mNumVertices)
+	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mBitangents, Bitangent)
 	DefineArraySetGetterSetter(aiMesh, aiColor4D, mColors, Colors, object.mNumVertices, AI_MAX_NUMBER_OF_COLOR_SETS)
 	unsigned int getNumUVComponents(const aiMesh &mesh, unsigned int setIndex)
 	{
@@ -53,8 +59,10 @@ namespace aiMeshEmbind
 	}
 	DefineArraySetGetterSetter(aiMesh, aiVector3D, mTextureCoords, TextureCoords, object.mNumVertices, AI_MAX_NUMBER_OF_TEXTURECOORDS)
 	DefineArrayGetterSetter(aiMesh, aiFace, mFaces, Faces, object.mNumFaces)
+	DefineArrayIndexRefGetterSetter(aiMesh, aiFace, mFaces, Face)
 	DefineGetterSetter(aiMesh, unsigned int, mNumBones, NumBones)
 	DefineArrayGetterSetter(aiMesh, aiBone *, mBones, Bones, object.mNumBones)
+	DefineArrayIndexGetterSetter(aiMesh, aiBone *, mBones, Bone)
 	DefineGetterSetter(aiMesh, unsigned int, mMaterialIndex, MaterialIndex)
 	std::string getName(const aiMesh &mesh)
 	{
@@ -115,12 +123,20 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("setNumFaces", &aiMeshEmbind::setNumFaces)
 	    .function("getVertices", &aiMeshEmbind::getVertices)
 	    .function("setVertices", &aiMeshEmbind::setVertices)
+	    .function("getVertex", &aiMeshEmbind::getVertex)
+	    .function("setVertex", &aiMeshEmbind::setVertex)
 	    .function("getNormals", &aiMeshEmbind::getNormals)
 	    .function("setNormals", &aiMeshEmbind::setNormals)
+	    .function("getNormal", &aiMeshEmbind::getNormal)
+	    .function("setNormal", &aiMeshEmbind::setNormal)
 	    .function("getTangents", &aiMeshEmbind::getTangents)
 	    .function("setTangents", &aiMeshEmbind::setTangents)
+	    .function("getTangent", &aiMeshEmbind::getTangent)
+	    .function("setTangent", &aiMeshEmbind::setTangent)
 	    .function("getBitangents", &aiMeshEmbind::getBitangents)
 	    .function("setBitangents", &aiMeshEmbind::setBitangents)
+	     .function("getBitangent", &aiMeshEmbind::getBitangent)
+	    .function("setBitangent", &aiMeshEmbind::setBitangent)
 	    .function("getColors", &aiMeshEmbind::getColors)
 	    .function("setColors", &aiMeshEmbind::setColors)
 	    .function("getTextureCoords", &aiMeshEmbind::getTextureCoords)
