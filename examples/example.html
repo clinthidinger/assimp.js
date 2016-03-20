@@ -67,12 +67,12 @@
 
       function getMeshTriCount( mesh ) {
         
-        var triCount = 0,
+        var faceIdx = 0,
+            triCount = 0,
             numFaces = mesh.getNumFaces();
-            //faces = mesh.getFaces();
-
+     
         for( faceIdx = 0; faceIdx < numFaces; ++faceIdx ) {
-          face = mesh.getFaces(faceIdx);
+          face = mesh.getFace(faceIdx);
           numIndices = face.getNumIndices();
           triCount += getPolyTriCount(numIndices);
         }
@@ -136,7 +136,9 @@
 
       function loadIndices(mesh, geom) {
 
-        var numFaces,
+        var i,
+            primType,
+            numFaces,
             faces,
             triCount,
             face,
@@ -144,33 +146,38 @@
             triCount,
             triIndicesAttr,
             faceTriIdx,
-            indices,
+            indices = [],
             tris,
             triCount,
             triIdx,
             tri;
 
+        primType = mesh.getPrimitiveTypes();
         numFaces = mesh.getNumFaces();
+
         //faces = mesh.getFaces();
-        if(primType == Module.aiPrimitiveType.TRIANGLE || primType == Module.aiPrimitiveType.POLYGON) {
+        if((primType != Module.aiPrimitiveType.TRIANGLE) || (primType != Module.aiPrimitiveType.POLYGON)) {
+          // unsupported type.
+        }
+        // Compute tri count.
+        triCount = getMeshTriCount(mesh);
+        triIndicesAttr = new THREE.BufferAttribute( new Uint16Array( triCount * 3 ), 3 ); // check if greater than max uint16
+        faceTriIdx = 0;
+
+        for( faceIdx = 0; faceIdx < numFaces; ++faceIdx ) {
           
-          // Compute tri count.
-          triCount = getMeshTriCount();
-          triIndicesAttr = new THREE.BufferAttribute( new Uint16Array( triCount * 3 ), 3 ); // check if greater than max uint16
-          faceTriIdx = 0;
+          face = mesh.getFace(faceIdx);
+          numIndices = face.getNumIndices();
+          indices.length = numIndices;
+          for( i = 0; i < numIndices; ++i ) {
+            indices[i] = face.getIndex(i);
+          }
+          tris = triangulatePoly( indices );
+          polyTriCount = tris.length;
 
-          for( faceIdx = 0; faceIdx < numFaces; ++faceIdx ) {
-            
-            face = mesh.getFace(faceIdx);
-            numIndices = face.getNumIndices();
-            indices = face.getIndices();  
-            tris = triangulatePoly( indices );
-            polyTriCount = tris.length;
-
-            for ( var triIdx = 0; triIdx < polyTriCount; ++triIdx ) {
-              var tri = tris[triIdx];
-              triIndicesAttr.setXYZ( faceTriIdx++, tri[0], tri[1], tri[2] );
-            }
+          for ( triIdx = 0; triIdx < polyTriCount; ++triIdx ) {
+            tri = tris[triIdx];
+            triIndicesAttr.setXYZ( faceTriIdx++, tri[0], tri[1], tri[2] );
           }
         }
         
@@ -191,15 +198,15 @@
         geom.addAttribute( 'normal', vertexNrmAttr );
       }
 
-      function loadVertexColors(mesh, geom) {
+      function loadVertexColors(mesh, geom, colorSetIdx) {
         
-        var colors = mesh.getVertexColors(),
+        var numVertices = mesh.getNumVertices(),
         vertexClrAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 3 ), 3 ),
         vertIdx,
         clr;
 
         for ( vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
-          clr = colors[vertIdx];
+          clr = mesh.getColor(colorSetIdx, vertIdx);
           vertexNrmAttr.setXYZ( vertIdx, clr.getX(), clr.getY(), clr.getZ() );
         }
         geom.addAttribute( 'color', vertexClrAttr );
@@ -207,7 +214,7 @@
 
       function loadTextureCoords(mesh, geom, index) {
         
-        var textureCoords = mesh.getTextureCoords( index ),
+        var numVertices = mesh.getNumVertices(),
             textureCoordAttr = new THREE.BufferAttribute( new Float32Array( numVertices * 2 ), 2 ),
             vertIdx,
             uv;
@@ -218,14 +225,14 @@
         }
 
         for ( vertIdx = 0; vertIdx < numVertices; ++vertIdx ) {
-          uv = textureCoords[vertIdx];
-          vertexNrmAttr.setXY( vertIdx, uv.getX(), uv.getY() );
+          uv = mesh.getTextureCoord(index, vertIdx);
+          textureCoordAttr.setXY( vertIdx, uv.getX(), uv.getY() );
         }
         
         if( index === 1 ) {
-          geom.addAttribute( 'uv2', vertexNrmAttr );
+          geom.addAttribute( 'uv2', textureCoordAttr );
         } else {
-          geom.addAttribute( 'uv', vertexNrmAttr );
+          geom.addAttribute( 'uv', textureCoordAttr );
         }
       }
 
@@ -286,8 +293,8 @@
           //bitangents = mesh.getBitangents();
         }
 
-        if(mesh.hasVertexColors()) {
-          loadVertexColors(mesh, geom);
+        if(mesh.hasVertexColors( 0 )) {
+          loadVertexColors(mesh, geom, 0);
         }
 
         if(mesh.hasTextureCoords( 0 )) {

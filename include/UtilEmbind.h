@@ -40,35 +40,35 @@
 	DefineArraySetter(ClassName, MemberType, MemberName, FuncName, Count)
 
 
-#define DefineArraySetGetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
-	std::vector<MemberType> get##FuncName(const ClassName &object, unsigned int index) \
-	{ \
-		std::vector<MemberType> array(Count); \
-		if(index < Max) \
-		{ \
-			std::copy(object.MemberName[index], object.MemberName[index] + Count, array.begin()); \
-		} \
-		return array; \
-	}
+//#define DefineArraySetGetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
+//	std::vector<MemberType> get##FuncName(const ClassName &object, unsigned int index) \
+//	{ \
+//		std::vector<MemberType> array(Count); \
+//		if(index < Max) \
+//		{ \
+//			std::copy(object.MemberName[index], object.MemberName[index] + Count, array.begin()); \
+//		} \
+//		return array; \
+//	}
 
-#define DefineArraySetSetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
-	void set##FuncName(ClassName &object, const std::vector<MemberType> &array, unsigned int index) \
-	{ \
-		if(index >= Max) \
-		{ \
-			return; \
-		} \
-		if(object.MemberName[index] != nullptr) \
-		{ \
-			delete[] object.MemberName[index]; \
-		} \
-		object.MemberName[index] = new MemberType[Count]; \
-		std::copy(array.begin(), array.end(), object.MemberName[index]); \
-	}
+//#define DefineArraySetSetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
+//	void set##FuncName(ClassName &object, const std::vector<MemberType> &array, unsigned int index) \
+//	{ \
+//		if(index >= Max) \
+//		{ \
+//			return; \
+//		} \
+//		if(object.MemberName[index] != nullptr) \
+//		{ \
+//			delete[] object.MemberName[index]; \
+//		} \
+//		object.MemberName[index] = new MemberType[Count]; \
+//		std::copy(array.begin(), array.end(), object.MemberName[index]); \
+//	}
 
-#define DefineArraySetGetterSetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
-	DefineArraySetGetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
-	DefineArraySetSetter(ClassName, MemberType, MemberName, FuncName, Count, Max)
+//#define DefineArraySetGetterSetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
+//	DefineArraySetGetter(ClassName, MemberType, MemberName, FuncName, Count, Max) \
+//	DefineArraySetSetter(ClassName, MemberType, MemberName, FuncName, Count, Max)
 
 #define DefineArrayIndexGetter(ClassName, MemberType, MemberName, FuncName) \
 	MemberType get##FuncName(const ClassName &object, unsigned int index) \
