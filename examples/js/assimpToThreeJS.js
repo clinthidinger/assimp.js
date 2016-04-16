@@ -15,7 +15,9 @@ var AssimpToThreeJS = (function() {
 
     function getMeshTriCount(mesh) {
 
-        var faceIdx = 0,
+        var face,
+            faceIdx = 0,
+            numIndices = 0,
             triCount = 0,
             numFaces = mesh.getNumFaces();
 
@@ -39,6 +41,8 @@ var AssimpToThreeJS = (function() {
             base1 = 1 + offsetIndex,
             lastTri = triCount - 1,
             vtxIdx,
+            revVtxIdx,
+            triIdx = 0,
             tri,
             nextTri;
 
@@ -92,7 +96,9 @@ var AssimpToThreeJS = (function() {
             numIndices,
             triIndicesAttr,
             faceTriIdx,
+            faceIdx,
             indices = [],
+            polyTriCount,
             tris,
             triIdx,
             tri;
@@ -101,33 +107,55 @@ var AssimpToThreeJS = (function() {
         numFaces = mesh.getNumFaces();
 
         //faces = mesh.getFaces();
-        if ((primType != Module.aiPrimitiveType.TRIANGLE) || (primType != Module.aiPrimitiveType.POLYGON)) {
+        if ((primType !== Module.aiPrimitiveType.TRIANGLE.value) && (primType !== Module.aiPrimitiveType.POLYGON.value)) {
             // unsupported type.
+            console.log('Unsupported type: ' + primType);
             return;
         }
         // Compute tri count.
-        triCount = getMeshTriCount(mesh);
-        triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 3); // check if greater than max uint16
-        faceTriIdx = 0;
-
-        for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
-
-            face = mesh.getFace(faceIdx);
-            numIndices = face.getNumIndices();
-            indices.length = numIndices;
-            for (i = 0; i < numIndices; ++i) {
-                indices[i] = face.getIndex(i);
+        /*
+        if (primType === Module.aiPrimitiveType.TRIANGLE.value) {
+            triCount = numFaces;
+            triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
+            var j = 0;
+            for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
+                face = mesh.getFace(faceIdx);
+                indices.length = 3;
+                for (i = 0; i < 3; ++i) {
+                    indices[i] = face.getIndex(i);
+                }
+                triIndicesAttr.array[j++] = indices[0];
+                triIndicesAttr.array[j++] = indices[1];
+                triIndicesAttr.array[j++] = indices[2];
             }
-            tris = triangulatePoly(indices);
-            polyTriCount = tris.length;
+        }
+        else*/ {
+            triCount = getMeshTriCount(mesh);
+            triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
+            faceTriIdx = 0;
+            var j = 0;
+            for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
 
-            for (triIdx = 0; triIdx < polyTriCount; ++triIdx) {
-                tri = tris[triIdx];
-                triIndicesAttr.setXYZ(faceTriIdx++, tri[0], tri[1], tri[2]);
+                face = mesh.getFace(faceIdx);
+                numIndices = face.getNumIndices();
+                indices.length = numIndices;
+                for (i = 0; i < numIndices; ++i) {
+                    indices[i] = face.getIndex(i);
+                }
+                tris = triangulatePoly(indices);
+                polyTriCount = tris.length;
+
+                for (triIdx = 0; triIdx < polyTriCount; ++triIdx) {
+                    tri = tris[triIdx];
+                    triIndicesAttr.array[j++] = tri[0];
+                    triIndicesAttr.array[j++] = tri[1];
+                    triIndicesAttr.array[j++] = tri[2];
+                    //triIndicesAttr.setXYZ(faceTriIdx++, tri[0], tri[1], tri[2]);
+                }
             }
         }
 
-        geom.addAttribute('index', triIndicesAttr);
+        geom.setIndex(triIndicesAttr);//geom.addAttribute('index', triIndicesAttr);
     }
 
     function loadNormals(mesh, geom) {
