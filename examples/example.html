@@ -35,6 +35,7 @@
         document.body.appendChild(renderer.domElement);
 
         window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('mousemove', onDocumentMouseMove, false);
     }
 
     function onWindowResize() {
