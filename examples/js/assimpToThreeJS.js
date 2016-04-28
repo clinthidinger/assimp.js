@@ -85,7 +85,28 @@ var AssimpToThreeJS = (function() {
         geom.addAttribute('position', vertexPosAttr);
     }
 
-    function loadIndices(mesh, geom) {
+    function loadTriIndices(mesh, geom) {
+          var triCount,
+            face,
+            triIndicesAttr,
+            faceIdx,
+            indexIdx;
+            
+        triCount = mesh.getNumFaces();
+        triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
+        indexIdx = 0;
+        
+        for (faceIdx = 0; faceIdx < triCount; ++faceIdx) {
+            face = mesh.getFace(faceIdx);
+            triIndicesAttr.array[indexIdx++] = face.getIndex(0);
+            triIndicesAttr.array[indexIdx++] = face.getIndex(1);
+            triIndicesAttr.array[indexIdx++] = face.getIndex(2);
+        }
+        
+        geom.setIndex(triIndicesAttr);
+    }
+    
+    function loadPolyIndices(mesh, geom) {
 
         var i,
             primType,
@@ -96,6 +117,7 @@ var AssimpToThreeJS = (function() {
             numIndices,
             triIndicesAttr,
             faceTriIdx,
+            indexIdx,
             faceIdx,
             indices = [],
             polyTriCount,
@@ -103,59 +125,32 @@ var AssimpToThreeJS = (function() {
             triIdx,
             tri;
 
-        primType = mesh.getPrimitiveTypes();
         numFaces = mesh.getNumFaces();
+        triCount = getMeshTriCount(mesh);
+        triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
+        faceTriIdx = 0;
+        indexIdx = 0;
+        
+        for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
 
-        //faces = mesh.getFaces();
-        if ((primType !== Module.aiPrimitiveType.TRIANGLE.value) && (primType !== Module.aiPrimitiveType.POLYGON.value)) {
-            // unsupported type.
-            console.log('Unsupported type: ' + primType);
-            return;
-        }
-        // Compute tri count.
-        /*
-        if (primType === Module.aiPrimitiveType.TRIANGLE.value) {
-            triCount = numFaces;
-            triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
-            var j = 0;
-            for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
-                face = mesh.getFace(faceIdx);
-                indices.length = 3;
-                for (i = 0; i < 3; ++i) {
-                    indices[i] = face.getIndex(i);
-                }
-                triIndicesAttr.array[j++] = indices[0];
-                triIndicesAttr.array[j++] = indices[1];
-                triIndicesAttr.array[j++] = indices[2];
+            face = mesh.getFace(faceIdx);
+            numIndices = face.getNumIndices();
+            indices.length = numIndices;
+            for (i = 0; i < numIndices; ++i) {
+                indices[i] = face.getIndex(i);
+            }
+            tris = triangulatePoly(indices);
+            polyTriCount = tris.length;
+
+            for (triIdx = 0; triIdx < polyTriCount; ++triIdx) {
+                tri = tris[triIdx];
+                triIndicesAttr.array[indexIdx++] = tri[0];
+                triIndicesAttr.array[indexIdx++] = tri[1];
+                triIndicesAttr.array[indexIdx++] = tri[2];
             }
         }
-        else*/ {
-            triCount = getMeshTriCount(mesh);
-            triIndicesAttr = new THREE.BufferAttribute(new Uint16Array(triCount * 3), 1); // check if greater than max uint16
-            faceTriIdx = 0;
-            var j = 0;
-            for (faceIdx = 0; faceIdx < numFaces; ++faceIdx) {
-
-                face = mesh.getFace(faceIdx);
-                numIndices = face.getNumIndices();
-                indices.length = numIndices;
-                for (i = 0; i < numIndices; ++i) {
-                    indices[i] = face.getIndex(i);
-                }
-                tris = triangulatePoly(indices);
-                polyTriCount = tris.length;
-
-                for (triIdx = 0; triIdx < polyTriCount; ++triIdx) {
-                    tri = tris[triIdx];
-                    triIndicesAttr.array[j++] = tri[0];
-                    triIndicesAttr.array[j++] = tri[1];
-                    triIndicesAttr.array[j++] = tri[2];
-                    //triIndicesAttr.setXYZ(faceTriIdx++, tri[0], tri[1], tri[2]);
-                }
-            }
-        }
-
-        geom.setIndex(triIndicesAttr);//geom.addAttribute('index', triIndicesAttr);
+    
+        geom.setIndex(triIndicesAttr);
     }
 
     function loadNormals(mesh, geom) {
@@ -241,6 +236,7 @@ var AssimpToThreeJS = (function() {
         var geom,
             name,
             matIdx,
+            primType,
             numColorChannels,
             numUVChannels,
             threeMesh;
@@ -248,6 +244,7 @@ var AssimpToThreeJS = (function() {
         geom = new THREE.BufferGeometry();
         name = mesh.getName();
         matIdx = mesh.getMaterialIndex();
+        primType = mesh.getPrimitiveTypes();
 
         geom.addAttribute('name', name);
         geom.addAttribute('material_index', matIdx);
@@ -257,7 +254,18 @@ var AssimpToThreeJS = (function() {
         }
 
         loadPositions(mesh, geom);
-        loadIndices(mesh, geom);
+        
+        if (primType === Module.aiPrimitiveType.TRIANGLE.value) {
+            loadTriIndices(mesh, geom);
+        }
+        else if (primType === Module.aiPrimitiveType.POLYGON.value) {
+            loadPolyIndices(mesh, geom);
+        }
+        else {
+            // Unsupported type.
+            console.log('Unsupported type: ' + primType);
+            return;
+        }
 
         if (mesh.hasNormals()) {
             loadNormals(mesh, geom);
@@ -336,6 +344,7 @@ var AssimpToThreeJS = (function() {
             var camera = assimpScene.getCamera(i);
         }
 
+        importer.delete();
         //var format = "collada"; //! @see Exporter.cpp line 98 for supported formats.
         //var outStr = exporter.exportToString(scene, format, null);
         //var h = 0;
@@ -346,56 +355,104 @@ var AssimpToThreeJS = (function() {
     //////////=======================================================
 
     function savePositions(threeMesh, assimpMesh) {
-        var numVertices = threeMesh.geometry.vertices.length;
-        assimpMesh.setNumVertices(numVertices); // Need to allocate internally???
-        var assimpVtx = new Module.aiVector3D();
-        for (var i = 0; i < numVertices; ++i) {
-            var threeVtx = threeMesh.geometry.vertices[i];
-            assimpVtx.set(threeVtx.x, threeVtx.y, threeVtx.z);
-            assimpMesh.setVertex(i, assimpVtx);
+        var positions = threeMesh.geometry.getAttribute('position');
+        var numVertices = positions.count;
+        assimpMesh.allocateVertices(numVertices);
+        //var assimpVtx = new Module.aiVector3D();
+        
+        
+        //assert(positions.array.length === numVertices);
+        //var len = positions.array.length;
+        //var n = assimpMesh.getNumVertices();
+        //assimpMesh.setVertex(0, assimpVtx);
+        //assimpMesh.setVertex(n - 1, assimpVtx);
+        
+        for (var posIdx = 0, fltIdx = 0; posIdx < numVertices; ++posIdx) {
+            //assimpVtx.set(positions.array[fltIdx++], positions.array[fltIdx++], positions.array[fltIdx++]);
+            //assimpMesh.setVertex(posIdx, assimpVtx);
+            assimpMesh.setVertex(posIdx, positions.array[fltIdx++], positions.array[fltIdx++], positions.array[fltIdx++]);
         }
+        
+        //assimpVtx.delete();
     }
 
     function saveIndices(threeMesh, assimpMesh) {
-
-    }
-
-    function saveNormals(threeMesh, assimpMesh) {
-        var numVertices = threeMesh.geometry.vertices.length;
-        assimpMesh.setNumVertices(numVertices); // Need to allocate internally???
-        var assimpNrm = new Module.aiVector3D();
-        for (var i = 0; i < numVertices; ++i) {
-            var threeNrm = threeMesh.geometry.normals[i];
-            assimpNrm.set(threeNrm.x, threeNrm.y, threeNrm.z);
-            assimpMesh.setNormal(i, assimpNrm);
+        var indices = threeMesh.geometry.getIndex();
+        var numIndices = indices.count;
+        var numTris = numIndices / 3;
+        assimpMesh.allocateTris(numTris);
+        
+        var t = assimpMesh.getFace(0);
+        
+        for (var triIdx = 0, idxIdx = 0; triIdx < numTris; ++triIdx) {
+            assimpMesh.getFace(triIdx).setIndex(0, indices[idxIdx++]);
+            assimpMesh.getFace(triIdx).setIndex(1, indices[idxIdx++]);
+            assimpMesh.getFace(triIdx).setIndex(2, indices[idxIdx++]);
         }
     }
 
-    function saveMesh(threeMesh) {
-        var assimpMesh = new Module.Mesh();
-        savePositions(threeMesh, assimpMesh);
+    function saveNormals(threeMesh, assimpMesh) {
+        var normals = threeMesh.geometry.getAttribute('normal');
+        var numVertices = normals.count;
+        assimpMesh.allocateNormals(numVertices);
+        //var assimpNrm = new Module.aiVector3D();
+        
+        for (var nrmIdx = 0, fltIdx = 0; nrmIdx < numVertices; ++nrmIdx) {
+            //assimpNrm.set(normals.array[fltIdx++], normals.array[fltIdx++], normals.array[fltIdx++]);
+            assimpMesh.setNormal(nrmIdx, normals.array[fltIdx++], normals.array[fltIdx++], normals.array[fltIdx++]);
+        }
+        //assimpNrm.delete();
     }
 
-    function saveContents(contents) {
+    function saveMesh(assimpScene, threeMesh) {
+        var assimpMesh = new Module.aiMesh();
+        assimpMesh.setPrimitiveTypes(Module.aiPrimitiveType.TRIANGLE.value);
+        
+        if(threeMesh.geometry.getAttribute('position') !== null) {
+            savePositions(threeMesh, assimpMesh);
+        }
+        if(threeMesh.geometry.getAttribute('index') !== null) {
+            saveIndices(threeMesh, assimpMesh);
+        }
+        if(threeMesh.geometry.getAttribute('normal') !== null) {
+            saveNormals(threeMesh, assimpMesh);
+        }
+        if(threeMesh.geometry.getAttribute('color') !== null) {
+            //saveVertexColors(threeMesh, assimpMesh);
+        }
+        if(threeMesh.geometry.getAttribute('uv') !== null) {
+            //saveTextureCoords(threeMesh, assimpMesh);
+        }
+        if(threeMesh.geometry.getAttribute('uv2') !== null) {
+            //saveTextureCoords(threeMesh, assimpMesh);
+        }
+        
+    }
+
+    function saveContents(threeScene) {
+        var assimpScene = new Module.aiScene();
         threeScene.traverse(function(node) {
 
             if (node instanceof THREE.Mesh) {
-                saveMesh(node);
+                saveMesh(assimpScene, node);
             } else if (node instanceof THREE.Material) {
-                //saveMaterial(node);
+                //saveMaterial(assimpScene, node);
             } else if (node instanceof THREE.Texture) {
-                //saveTexture(node);
-            } else if (node instanceof THREE.Animation) {
-                //saveAnimation(node);
+                //saveTexture(assimpScene, node);
+            //} else if (node instanceof THREE.Animation) {
+                //saveAnimation(assimpScene, node);
             } else if (node instanceof THREE.Camera) {
-                //saveCamera(node);
+                //saveCamera(assimpScene, node);
             } else if (node instanceof THREE.Bone) {
-                //saveCamera(node);
+                //saveBone(assimpScene, node);
             }
-
-            var exporter = new Module.Exporter();
-            exporter.writeFileFromMemory();
         });
+        var exporter = new Module.Exporter();
+        var str = exporter.exportToString(assimpScene, 'dae', null);
+        exporter.delete();
+        assimpScene.delete();
+        
+        return str;
     }
 
     return {

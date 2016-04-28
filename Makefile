@@ -4,9 +4,11 @@ IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp
            -Iassimp/contrib/openddlparser/include -Iassimp/contrib/clipper -Iassimp/contrib/ConvertUTF \
            -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
            -Iinclude
-EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1
+EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s SAFE_HEAP=1 -s TOTAL_MEMORY=64
 # -s MODULARIZE=1 
-#CFLAGS=$(EFLAGS) -std=c++11 
+# see https://github.com/syl22-00/pocketsphinx.js/wiki/Emscripten-parameters
+#CFLAGS=$(EFLAGS) -std=c++11
+#-v enables Debug mode  
 CPPFLAGS=$(EFLAGS) -std=c++11 -g4 --js-opts 0 
 CFLAGS=$(EFLAGS) -g4 --js-opts 0 -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
 LDFLAGS_FULL=$(EFLAGS)

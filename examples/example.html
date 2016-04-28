@@ -1,9 +1,10 @@
 <!doctype html>
 <html>
 <div id="container"></div>
-<input type="file" id="file-input" />
-<input type="file" id="file-output" />
-<h3>Contents of the file:</h3>
+<input type="file" id="load" />
+<!--<input type="file" id="file-output" />-->
+<input type="submit" id="save" value="Save"/>
+<h3>3D View:</h3>
 <pre id="file-content"></pre>
 <script src="three.min.js"></script>
 <script src="FileSaver.min.js"></script>
@@ -34,8 +35,11 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        var s = document.getElementById('save');
         window.addEventListener('resize', onWindowResize, false);
         document.addEventListener('mousemove', onDocumentMouseMove, false);
+        document.getElementById('load').addEventListener('change', readSingleFile, false);
+        document.getElementById('save').addEventListener('click', writeSingleFile, false);
     }
 
     function onWindowResize() {
@@ -93,6 +97,7 @@
         reader.readAsText(file);
     }
 
+    /*
     function writeSingleFile(e) {
         var file = e.target.files[0];
         if (!file) {
@@ -107,9 +112,27 @@
         };
         writer.writerAsText(file);
     }
+    */
+    function writeSingleFile(e) {
+        e.preventDefault();
+        /*
+	    var BB = get_blob();
+	    saveAs(
+		  new BB([text.value || text.placeholder], {type: "text/plain;charset=" + document.characterSet} ),
+         'out.dae');
+         */
+        var strScene = AssimpToThreeJS.saveContents(scene);
+        //var blob = new Blob(["Hello, world!"], {type: "text/plain;charset=utf-8"});
+        var blob = new Blob(strScene, {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "download.dae");
+        console.log('write');
+    }
 
-    document.getElementById('file-input').addEventListener('change', readSingleFile, false);
-    document.getElementById('file-output').addEventListener('change', writeSingleFile, false);
+    //document.getElementById('load').addEventListener('change', readSingleFile, false);
+    //document.getElementById('save').addEventListener('submit', writeSingleFile, false);
+    
+    //text_options_form.addEventListener('submit', writeSingleFile, false);
+	
 </script>
 
 </html>

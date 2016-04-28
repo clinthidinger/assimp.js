@@ -6,10 +6,37 @@
 using namespace emscripten;
 
 
+template<class ArrayType>
+void allocateArray(ArrayType **array, size_t count, size_t &defaultCount)
+{
+	if(array == nullptr)
+	{
+		return;
+	}
+	if(count == 0)
+	{
+		count = defaultCount;
+	}
+	else
+	{
+		defaultCount = count;
+	}
+	
+	if(*array != nullptr)
+	{
+		delete[] *array;	
+	}	
+	*array = new ArrayType[count];
+}
+
 namespace aiFaceEmbind
 {
 	DefineGetterSetter(aiFace, unsigned int, mNumIndices, NumIndices)
 	DefineArrayIndexGetterSetter(aiFace, unsigned int, mIndices, Index)
+	void allocateIndices(aiFace &face, size_t count = 0)
+	{
+		allocateArray<unsigned int>(&face.mIndices, count, face.mNumIndices);
+	}
 }
 
 namespace aiVertexWeightEmbind
@@ -32,6 +59,10 @@ namespace aiBoneEmbind
 	DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, object.mNumWeights)
 	DefineArrayIndexRefGetterSetter(aiBone, aiVertexWeight, mWeights, Weight)
 	DefineConstGetterSetter(aiBone, aiMatrix4x4, mOffsetMatrix, OffsetMatrix)
+	void allocateWeights(aiBone &bone, size_t count = 0)
+	{
+		allocateArray<aiVertexWeight>(&bone.mWeights, count, bone.mNumWeights);
+	}
 }
 
 namespace aiMeshEmbind
@@ -39,11 +70,25 @@ namespace aiMeshEmbind
 	DefineGetterSetter(aiMesh, unsigned int, mPrimitiveTypes, PrimitiveTypes)
 	DefineGetterSetter(aiMesh, unsigned int, mNumVertices, NumVertices)
 	DefineGetterSetter(aiMesh, unsigned int, mNumFaces, NumFaces)
-	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mVertices, Vertex)
-	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mNormals, Normal)
-	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mTangents, Tangent)
-	DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mBitangents, Bitangent)
-	DefineArrayIndexRefGetterSetter(aiMesh, aiFace, mFaces, Face)
+	//DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mVertices, Vertex)
+	//DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mNormals, Normal)
+	//DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mTangents, Tangent)
+	//DefineArrayIndexRefGetterSetter(aiMesh, aiVector3D, mBitangents, Bitangent)
+	//DefineArrayIndexRefGetterSetter(aiMesh, aiFace, mFaces, Face)
+	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mVertices, Vertex)
+	void setVertex(aiMesh &mesh, unsigned int index, float x, float y, float z)
+	{
+		mesh.mVertices[index].Set(x, y, z);
+	}
+	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mNormals, Normal)
+	void setNormal(aiMesh &mesh, unsigned int index, float x, float y, float z)
+	{
+		mesh.mNormals[index].Set(x, y, z);
+	}
+	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mTangents, Tangent)
+	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mBitangents, Bitangent)
+	DefineArrayIndexRefGetter(aiMesh, aiFace, mFaces, Face)
+	
 	DefineGetterSetter(aiMesh, unsigned int, mNumBones, NumBones)
 	DefineArrayIndexGetterSetter(aiMesh, aiBone *, mBones, Bone)
 	DefineGetterSetter(aiMesh, unsigned int, mMaterialIndex, MaterialIndex)
@@ -79,6 +124,46 @@ namespace aiMeshEmbind
 	{
 		mesh.mColors[colorSetIdx][vertIdx] = value;
 	}
+    void allocateVertices(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiVector3D>(&mesh.mVertices, count, mesh.mNumVertices);
+    }
+    void allocateNormals(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiVector3D>(&mesh.mNormals, count, mesh.mNumVertices);
+    }
+    void allocateTextureCoords(aiMesh &mesh, unsigned int setIndex, size_t count = 0)
+    {
+		allocateArray<aiVector3D>(&mesh.mTextureCoords[setIndex], count, mesh.mNumUVComponents[setIndex]);
+    }
+	void allocateVertexColors(aiMesh &mesh, unsigned int setIndex, size_t count = 0)
+    {
+		allocateArray<aiColor4D>(&mesh.mColors[setIndex], count, mesh.mNumVertices);
+    }
+	void allocateTangents(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiVector3D>(&mesh.mTangents, count, mesh.mNumVertices);
+    }
+	void allocateBitangents(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiVector3D>(&mesh.mBitangents, count, mesh.mNumVertices);
+    }
+	void allocateFaces(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiFace>(&mesh.mFaces, count, mesh.mNumFaces);
+    }
+	void allocateTris(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiFace>(&mesh.mFaces, count, mesh.mNumFaces);
+		//for(unsigned int i; i < mesh.mNumFaces; ++i)
+		//{
+		//	aiFaceEmbind::allocateIndices(mesh.mFaces[i], 3);
+		//}
+    }
+	void allocateBones(aiMesh &mesh, size_t count = 0)
+    {
+		allocateArray<aiBone *>(&mesh.mBones, count, mesh.mNumBones);
+    }
 }
 
 EMSCRIPTEN_BINDINGS(assimp_mesh)
@@ -93,6 +178,7 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 		.function("op_equals", &aiFace::operator=)
 		.function("op_equal_to", &aiFace::operator==)
 		.function("op_not_equal_to", &aiFace::operator!=)
+		.function("allocateIndices", &aiFaceEmbind::allocateIndices)
 		;
 
 	class_<aiVertexWeight>("aiVertexWeight")
@@ -111,6 +197,7 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 		.function("setName", &aiBoneEmbind::setName)
 		.function("getNumWeights", &aiBoneEmbind::getNumWeights)
 		.function("setNumWeights", &aiBoneEmbind::setNumWeights)
+		.function("allocateWeights", &aiBoneEmbind::allocateWeights)
 		;
 
 	enum_<aiPrimitiveType>("aiPrimitiveType")
@@ -133,17 +220,17 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("getNormal", &aiMeshEmbind::getNormal)
 	    .function("setNormal", &aiMeshEmbind::setNormal)
 	    .function("getTangent", &aiMeshEmbind::getTangent)
-	    .function("setTangent", &aiMeshEmbind::setTangent)
+	    //.function("setTangent", &aiMeshEmbind::setTangent)
 	    .function("getBitangent", &aiMeshEmbind::getBitangent)
-	    .function("setBitangent", &aiMeshEmbind::setBitangent)
+	    //.function("setBitangent", &aiMeshEmbind::setBitangent)
 	    .function("getColor", &aiMeshEmbind::getColor)
-	    .function("setColor", &aiMeshEmbind::setColor)
+	    //.function("setColor", &aiMeshEmbind::setColor)
 	    .function("getTextureCoord", &aiMeshEmbind::getTextureCoord)
-	    .function("setTextureCoord", &aiMeshEmbind::setTextureCoord)
-	    .function("getNumUVComponents", &aiMeshEmbind::getNumUVComponents)
-	    .function("setNumUVComponents", &aiMeshEmbind::setNumUVComponents)
+	    //.function("setTextureCoord", &aiMeshEmbind::setTextureCoord)
+	    //.function("getNumUVComponents", &aiMeshEmbind::getNumUVComponents)
+	    //.function("setNumUVComponents", &aiMeshEmbind::setNumUVComponents)
 	    .function("getFace", &aiMeshEmbind::getFace)
-	    .function("setFace", &aiMeshEmbind::setFace)
+	    //.function("setFace", &aiMeshEmbind::setFace)
 	    .function("getNumBones", &aiMeshEmbind::getNumBones)
 	    .function("setNumBones", &aiMeshEmbind::setNumBones)
 	    //!!!.function("getBone", &aiMeshEmbind::getBone)
@@ -165,5 +252,13 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("getNumUVChannels", &aiMesh::GetNumUVChannels)
 	    .function("getNumColorChannels", &aiMesh::GetNumColorChannels)
 	    .function("hasBones", &aiMesh::HasBones)
-	    ; 
+		.function("allocateVertices", &aiMeshEmbind::allocateVertices)
+    	.function("allocateNormals", &aiMeshEmbind::allocateNormals)
+    	.function("allocateTextureCoords", &aiMeshEmbind::allocateTextureCoords)
+    	.function("allocateVertexColors", &aiMeshEmbind::allocateVertexColors)
+    	.function("allocateTangents", &aiMeshEmbind::allocateTangents)
+    	.function("allocateBitangents", &aiMeshEmbind::allocateBitangents)
+		.function("allocateFaces", &aiMeshEmbind::allocateFaces)
+		.function("allocateTris", &aiMeshEmbind::allocateTris)
+	    ; 	
 } // end EMSCRIPTEN_BINDINGS
