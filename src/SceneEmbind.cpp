@@ -3,13 +3,63 @@
 #include "UtilEmbind.h"
 #include "assimp/scene.h"
 #include "assimp/mesh.h"
+#include <new>
 
 using namespace emscripten;
 //using namespace Assimp;
 
+/*
+const size_t Alignment = 16;
+
+void* aligned_alloc(std::size_t size, std::size_t alignment){
+    if(alignment < alignof(void*)) { 
+        alignment = alignof(void*); 
+    }
+    std::size_t space = size + alignment - 1;
+    void* allocated_mem = std::malloc(space + sizeof(void*));
+    void* aligned_mem = static_cast<void*>(static_cast<char*>(allocated_mem) + sizeof(void*)); 
+    ////////////// #1 ///////////////
+    std::align(alignment, size, aligned_mem, space);
+    ////////////// #2 ///////////////
+    *(static_cast<void**>(aligned_mem) - 1) = allocated_mem;
+    ////////////// #3 ///////////////
+    return aligned_mem;
+}
+
+void aligned_free(void* p) noexcept {
+    std::free(*(static_cast<void**>(p) - 1));
+}
+
+void *operator new(std::size_t n) throw(std::bad_alloc)
+{
+	//printf("clint allocate");
+    //return aligned_alloc(16, n);
+
+ 	return aligned_alloc(n, Alignment);
+}
+
+void *operator new[](std::size_t n)
+{
+	//printf("clint allocate[]");
+  //return ::operator new[](n);
+	//return aligned_alloc(16, n);
+	return aligned_alloc(n, Alignment);
+}
+
+void operator delete(void * p) throw()
+{
+  aligned_free(p);
+}
+
+void operator delete[](void * p)
+{
+  aligned_free(p);
+}
+*/
+
 namespace aiNodeEmbind
 {
-	DefineGetterSetter(aiNode, aiString &, mName, Name)
+	DefineGetter(aiNode, aiString &, mName, Name)
 	DefineGetterSetter(aiNode, aiMatrix4x4 &, mTransformation, Transformation)
 	DefineGetterSetter(aiNode, aiNode *, mParent, Parent)
 	DefineGetterSetter(aiNode, unsigned int, mNumChildren, NumChildren)
@@ -17,6 +67,18 @@ namespace aiNodeEmbind
 	DefineGetterSetter(aiNode, unsigned int, mNumMeshes, NumMeshes)
 	DefineArrayGetterSetter(aiNode, unsigned int, mMeshes, Meshes, object.mNumMeshes)
 	DefineArrayIndexGetterSetter(aiNode, unsigned int, mMeshes, MeshIndex)
+	void setName(aiNode &node, const std::string &name)
+	{
+		node.mName = aiString(name);
+	}
+	void allocateChildren(aiNode &node, size_t count = 0)
+    {
+		allocateArray<aiNode *>(&node.mChildren, count, node.mNumChildren);
+    }
+    void allocateMeshIndices(aiNode &node, size_t count = 0)
+    {
+		allocateArray<unsigned int>(&node.mMeshes, count, node.mNumMeshes);
+    }
 	//unsigned int getMeshIndex(const aiNode &node, int index) { return node.mMeshes[index]; }
 	//void setMeshIndex(const aiScene &node, int index, unsigned int i) { node.mMeshes[index] = i; }
 }
@@ -40,6 +102,36 @@ namespace aiSceneEmbind
 	DefineGetterSetter(aiScene, unsigned int, mNumCameras, NumCameras)
 	DefineArrayIndexGetterSetter(aiScene, aiCamera *, mCameras, Camera)
 
+	void allocateMeshes(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiMesh *>(&scene.mMeshes, count, scene.mNumMeshes);
+		memset(scene.mMeshes, 0, sizeof(aiMesh *) * count);
+    }
+    void allocateMaterials(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiMaterial *>(&scene.mMaterials, count, scene.mNumMaterials);
+		memset(scene.mMaterials, 0, sizeof(aiMaterial *) * count);
+    }
+    void allocateAnimations(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiAnimation *>(&scene.mAnimations, count, scene.mNumAnimations);
+		memset(scene.mAnimations, 0, sizeof(aiAnimation *) * count);
+    }
+    void allocateTextures(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiTexture *>(&scene.mTextures, count, scene.mNumTextures);
+		memset(scene.mTextures, 0, sizeof(aiTexture *) * count);
+    }
+    void allocateLights(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiLight *>(&scene.mLights, count, scene.mNumLights);
+		memset(scene.mLights, 0, sizeof(aiLight *) * count);
+    }
+    void allocateCameras(aiScene &scene, size_t count = 0)
+    {
+		allocateArray<aiCamera *>(&scene.mCameras, count, scene.mNumCameras);
+		memset(scene.mCameras, 0, sizeof(aiCamera *) * count);
+    }
 	//aiMesh *getMesh(const aiScene &scene, int index) { return scene.mMeshes[index]; }
 	//void setMesh(const aiScene &scene, int index, aiMesh *mesh) { scene.mMeshes[index] = mesh; }
 	//aiMaterial *getMaterial(const aiScene &scene, int index) { return scene.mMaterials[index]; }
@@ -77,6 +169,8 @@ EMSCRIPTEN_BINDINGS(assimp_scene)
 		.function("setNumMeshes", &aiNodeEmbind::setNumMeshes)
 		.function("getMeshIndex", &aiNodeEmbind::getMeshIndex, allow_raw_pointers())
 		.function("setMeshIndex", &aiNodeEmbind::setMeshIndex, allow_raw_pointers())
+		.function("allocateChildren", &aiNodeEmbind::allocateChildren)
+		.function("allocateMeshIndices", &aiNodeEmbind::allocateMeshIndices)
 		;
 
     class_<aiScene>("aiScene")
@@ -115,5 +209,11 @@ EMSCRIPTEN_BINDINGS(assimp_scene)
 	    .function("setNumCameras", &aiSceneEmbind::setNumCameras)
 	    .function("getCamera", &aiSceneEmbind::getCamera, allow_raw_pointers())
 	    .function("setCamera", &aiSceneEmbind::setCamera, allow_raw_pointers())
+	    .function("allocateMeshes", &aiSceneEmbind::allocateMeshes)
+	    .function("allocateMaterials", &aiSceneEmbind::allocateMaterials)
+	    .function("allocateAnimations", &aiSceneEmbind::allocateAnimations)
+	    .function("allocateTextures", &aiSceneEmbind::allocateTextures)
+	    .function("allocateLights", &aiSceneEmbind::allocateLights)
+	    .function("allocateCameras", &aiSceneEmbind::allocateCameras)
 	    ;
 } // end EMSCRIPTEN_BINDINGS

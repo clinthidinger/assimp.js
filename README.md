@@ -11,25 +11,27 @@ Go to https://kripken.github.io/emscripten-site/docs/getting_started/downloads.h
 ./emsdk install --build=Release latest
 ./emsdk activate --build=Release latest
 
+Posssibly do:
 source ${YOUR_EMSCRIPTEN_DIR}/emsdk_env.sh
+
+
+git submodule update --init --recursive
 
 make
 
 
-Run:
+Run from repo directory:
 
 python -m SimpleHTTPServer 8000
 
-Then open example.html.
+Then open http://localhost:8000/examples/example.html
 
 
 TODO:
 
-Been years since messing with this so figure out where this is at.  I can't remember what these notes are about.
+Matrix4x4 ctor seems to be broken.
 
-
-
-
+Using "-s SAFE_HEAP=1" will cause a crash on export due to mem alignment issues.  They will likely happen in the material export.
 
 For unbound types:
 Pay attention to ordering of sources in makefile.  Also, make sure to include the appropriate headers in embind files.

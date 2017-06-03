@@ -5,6 +5,7 @@
 #include "utilEmbind.h"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
+#include "assimp/DefaultLogger.hpp"
 
 using namespace emscripten;
 using namespace Assimp;
@@ -30,15 +31,19 @@ namespace ExporterEmbind
 	template<typename T>
 	bool exportTo(Exporter &exporter, const aiScene *scene, const std::string &formatId, const ExportProperties *properties, T &outBuffer)
 	{
+		Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE, aiDefaultLogStream_STDOUT);
+
 		const aiExportDataBlob *blob = exporter.ExportToBlob(scene, formatId.c_str(), 0, properties);
 		if(blob == nullptr)
 		{
+			printf("exportTo(): Blob is null.\n");
 			return false;
 		}
 		
 		const char *data = reinterpret_cast<char *>(blob->data);
 		if(data == nullptr)
 		{
+			printf("exportTo(): data is null.\n");
 			return false;
 		}
 
@@ -46,6 +51,7 @@ namespace ExporterEmbind
 		std::copy(data, data + blob->size, outBuffer.begin());
 		// @note blob->next may point to extra files (i.e. material files).
 
+		printf("exportTo(): true.\n");
 		return true;
 	}
 

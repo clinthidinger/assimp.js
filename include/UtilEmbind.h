@@ -102,3 +102,25 @@
 	DefineArrayIndexRefSetter(ClassName, MemberType, MemberName, FuncName)
 
 
+template<class ArrayType>
+inline void allocateArray(ArrayType **array, size_t count, size_t &defaultCount)
+{
+	if(array == nullptr)
+	{
+		return;
+	}
+	if(count == 0)
+	{
+		count = defaultCount;
+	}
+	else
+	{
+		defaultCount = count;
+	}
+	
+	if(*array != nullptr)
+	{
+		delete[] *array;	
+	}	
+	*array = new ArrayType[count];
+}

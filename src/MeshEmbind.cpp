@@ -5,34 +5,11 @@
 
 using namespace emscripten;
 
-
-template<class ArrayType>
-void allocateArray(ArrayType **array, size_t count, size_t &defaultCount)
-{
-	if(array == nullptr)
-	{
-		return;
-	}
-	if(count == 0)
-	{
-		count = defaultCount;
-	}
-	else
-	{
-		defaultCount = count;
-	}
-	
-	if(*array != nullptr)
-	{
-		delete[] *array;	
-	}	
-	*array = new ArrayType[count];
-}
-
 namespace aiFaceEmbind
 {
 	DefineGetterSetter(aiFace, unsigned int, mNumIndices, NumIndices)
 	DefineArrayIndexGetterSetter(aiFace, unsigned int, mIndices, Index)
+
 	void allocateIndices(aiFace &face, size_t count = 0)
 	{
 		allocateArray<unsigned int>(&face.mIndices, count, face.mNumIndices);
@@ -87,8 +64,10 @@ namespace aiMeshEmbind
 	}
 	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mTangents, Tangent)
 	DefineArrayIndexRefGetter(aiMesh, aiVector3D, mBitangents, Bitangent)
-	DefineArrayIndexRefGetter(aiMesh, aiFace, mFaces, Face)
-	
+	//DefineArrayIndexRefGetter(aiMesh, aiFace, mFaces, Face)
+	DefineArrayIndexGetter(aiMesh, aiFace &, mFaces, Face)
+	DefineArrayIndexRefSetter(aiMesh, aiFace, mFaces, Face)
+
 	DefineGetterSetter(aiMesh, unsigned int, mNumBones, NumBones)
 	DefineArrayIndexGetterSetter(aiMesh, aiBone *, mBones, Bone)
 	DefineGetterSetter(aiMesh, unsigned int, mMaterialIndex, MaterialIndex)
@@ -115,6 +94,22 @@ namespace aiMeshEmbind
 	void setTextureCoord(aiMesh &mesh, unsigned int uvSetIdx, unsigned int vertIdx, const aiVector3D &value)
 	{
 		mesh.mTextureCoords[uvSetIdx][vertIdx] = value;
+	}
+	void setTextureCoord3(aiMesh &mesh, unsigned int uvSetIdx, unsigned int vertIdx, float u, float v, float w)
+	{
+		mesh.mTextureCoords[uvSetIdx][vertIdx].Set(u, v, w);
+	}
+	void setTextureCoord2(aiMesh &mesh, unsigned int uvSetIdx, unsigned int vertIdx, float u, float v)
+	{
+		setTextureCoord3(mesh, uvSetIdx, vertIdx, u, v, 0);
+	}
+	void setVertexColor(aiMesh &mesh, unsigned int clrSetIdx, unsigned int vertIdx, float r, float g, float b)
+	{
+		auto &color = mesh.mColors[clrSetIdx][vertIdx];
+		color.r = r;
+		color.g = g;
+		color.b = b;
+		//!!!color.a = a;
 	}
 	const aiColor4D &getColor(const aiMesh &mesh, unsigned int colorSetIdx, unsigned int vertIdx)
 	{
@@ -163,7 +158,33 @@ namespace aiMeshEmbind
 	void allocateBones(aiMesh &mesh, size_t count = 0)
     {
 		allocateArray<aiBone *>(&mesh.mBones, count, mesh.mNumBones);
+		memset(mesh.mBones, 0, sizeof(aiBone *) * count);
     }
+
+    /*
+    aiMesh *createMesh()
+    {
+    	aiMesh *mesh = new aiMesh();
+    	mesh->mVertices = new aiVector3D[0];
+    	mesh->mNormals = new aiVector3D[0];
+        mesh->mTangents = new aiVector3D[0];
+        mesh->mBitangents = new aiVector3D[0];
+        mesh->mFaces = new aiFace[0];
+
+        for(auto a = 0; a < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++a) 
+        {
+            mesh->mTextureCoords[a] = new aiVector3D[0];
+        }
+        for(auto a = 0; a < AI_MAX_NUMBER_OF_COLOR_SETS; ++a)
+        {
+            mesh->mColors[a] = new aiColor4D[0];
+        }
+        mesh->mNumBones = 0;
+        mesh->mNumAnimMeshes = 0;
+
+        return mesh;
+    }
+    */
 }
 
 EMSCRIPTEN_BINDINGS(assimp_mesh)
@@ -209,6 +230,7 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 
 	class_<aiMesh>("aiMesh")
 		.constructor<>()
+		//.class_function("createMesh", &aiMeshEmbind::createMesh, allow_raw_pointers())
 	    .function("getPrimitiveTypes", &aiMeshEmbind::getPrimitiveTypes)
 	    .function("setPrimitiveTypes", &aiMeshEmbind::setPrimitiveTypes)
 	    .function("getNumVertices", &aiMeshEmbind::getNumVertices)
@@ -226,11 +248,13 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("getColor", &aiMeshEmbind::getColor)
 	    //.function("setColor", &aiMeshEmbind::setColor)
 	    .function("getTextureCoord", &aiMeshEmbind::getTextureCoord)
-	    //.function("setTextureCoord", &aiMeshEmbind::setTextureCoord)
-	    //.function("getNumUVComponents", &aiMeshEmbind::getNumUVComponents)
-	    //.function("setNumUVComponents", &aiMeshEmbind::setNumUVComponents)
+	    .function("setTextureCoord", &aiMeshEmbind::setTextureCoord)
+	    .function("setTextureCoord2", &aiMeshEmbind::setTextureCoord2)
+	    .function("setTextureCoord3", &aiMeshEmbind::setTextureCoord3)
+	    .function("getNumUVComponents", &aiMeshEmbind::getNumUVComponents)
+	    .function("setNumUVComponents", &aiMeshEmbind::setNumUVComponents)
 	    .function("getFace", &aiMeshEmbind::getFace)
-	    //.function("setFace", &aiMeshEmbind::setFace)
+	    .function("setFace", &aiMeshEmbind::setFace)
 	    .function("getNumBones", &aiMeshEmbind::getNumBones)
 	    .function("setNumBones", &aiMeshEmbind::setNumBones)
 	    //!!!.function("getBone", &aiMeshEmbind::getBone)

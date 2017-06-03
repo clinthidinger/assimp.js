@@ -176,7 +176,7 @@ var AssimpToThreeJS = (function() {
 
         for (vertIdx = 0; vertIdx < numVertices; ++vertIdx) {
             clr = mesh.getColor(colorSetIdx, vertIdx);
-            vertexNrmAttr.setXYZ(vertIdx, clr.getX(), clr.getY(), clr.getZ());
+            vertexClrAttr.setXYZ(vertIdx, clr.getX(), clr.getY(), clr.getZ());
         }
         geom.addAttribute('color', vertexClrAttr);
     }
@@ -230,7 +230,7 @@ var AssimpToThreeJS = (function() {
         }
     }
 
-    function loadMesh(threeScene, mesh) {
+    function loadMesh(mesh) {
         // see BufferGeometry.js fromDirectGeometry()
 
         var geom,
@@ -300,9 +300,58 @@ var AssimpToThreeJS = (function() {
         //    });
 
         threeMesh = new THREE.Mesh(geom);
+        return threeMesh;
 
+        //parentNode.add(threeMesh);
+    }
 
-        threeScene.add(threeMesh);
+    function assimpMat4ToThreeMat4(assimpMat4) {
+        var threeMat4 = new THREE.Matrix4()
+        threeMat4.set(assimpMat4.getA1(), assimpMat4.getA2(), assimpMat4.getA3(), assimpMat4.getA4(),
+                      assimpMat4.getB1(), assimpMat4.getB2(), assimpMat4.getB3(), assimpMat4.getB4(),
+                      assimpMat4.getC1(), assimpMat4.getC2(), assimpMat4.getC3(), assimpMat4.getC4(),
+                      assimpMat4.getD1(), assimpMat4.getD2(), assimpMat4.getD3(), assimpMat4.getD4());
+        return threeMat4;
+    }
+
+    function threeMat4ToAssimpMat4(threeMat4) {
+        var m0 = new Module.aiMatrix3x3();
+        var m1 = new Module.aiMatrix4x4();
+        var assimpMat4 = new Module.aiMatrix4x4(threeMat4.elements[0], threeMat4.elements[1], threeMat4.elements[2], threeMat4.elements[3],
+                                                threeMat4.elements[4], threeMat4.elements[5], threeMat4.elements[6], threeMat4.elements[7],
+                                                threeMat4.elements[8], threeMat4.elements[9], threeMat4.elements[10], threeMat4.elements[11],
+                                                threeMat4.elements[12], threeMat4.elements[13], threeMat4.elements[14], threeMat4.elements[15]);
+        return assimpMat4;
+    }
+
+    function loadNode(threeNode, assimpNode, meshArray) {
+        var i = 0,
+            numMeshes = assimpNode.getNumMeshes(),
+            numChildren = assimpNode.getNumChildren(),
+            meshIndex = 0,
+            assimpChildNode = null,
+            threeChildNode = null;
+            //xformMat4 = null;
+
+        threeNode.name = assimpNode.getName().str();
+        threeNode.matrix = assimpMat4ToThreeMat4(assimpNode.getTransformation());
+        
+        for (i = 0; i < numMeshes; ++i) {
+            meshIndex = assimpNode.getMeshIndex(i);
+            threeNode.add(meshArray[meshIndex]);
+        }
+        for (i = 0; i < numChildren; ++i) {
+            assimpChildNode = assimpNode.getChild(i);
+            threeChildNode = new THREE.Object3D();
+            threeNode.add(threeChildNode);
+            loadNode(threeChildNode, assimpChildNode, meshArray);
+        }
+    }
+
+    function loadContentsHack(contents) {
+        var importer = new Module.Importer();
+        var assimpScene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
+        return assimpScene;
     }
 
     function loadContents(contents) {
@@ -312,6 +361,23 @@ var AssimpToThreeJS = (function() {
         var importer = new Module.Importer();
         var assimpScene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
 
+        var root = assimpScene.getRootNode();
+        console.log(root.getName());
+        var numChildren = root.getNumChildren();
+        for(i = 0; i < numChildren; ++i)
+        {
+            console.log(root.getChild(i).getName());
+            if(root.getChild(i).getNumMeshes() > 0) {
+                console.log("Mesh count: " + root.getChild(i).getNumMeshes());
+                console.log("Mesh index: " + root.getChild(i).getMeshIndex(0));
+            }
+        }
+
+        //var exporter = new Module.Exporter();
+        //exporter.exportToString(assimpScene, 'collada', null);
+        //exporter.delete();
+        var rootNode = assimpScene.getRootNode();
+
         var numMeshes = assimpScene.getNumMeshes();
         var numMaterials = assimpScene.getNumMaterials();
         var numLights = assimpScene.getNumLights();
@@ -319,17 +385,16 @@ var AssimpToThreeJS = (function() {
         var numTextures = assimpScene.getNumTextures();
         var numCameras = assimpScene.getNumCameras();
 
-
         for (i = 0; i < numMaterials; ++i) {
             var mat = assimpScene.getMaterial(i);
         }
 
+        var meshArray = [];
         for (i = 0; i < numMeshes; ++i) {
             var mesh = assimpScene.getMesh(i);
-            loadMesh(threeScene, mesh);
-            //scene.add(mesh);
-            // how to do sub meshes???
+            meshArray.push(loadMesh(mesh));
         }
+        loadNode(threeScene, rootNode, meshArray);
 
         for (i = 0; i < numTextures; ++i) {
             var texture = assimpScene.getTexture(i);
@@ -358,6 +423,7 @@ var AssimpToThreeJS = (function() {
         var positions = threeMesh.geometry.getAttribute('position');
         var numVertices = positions.count;
         assimpMesh.allocateVertices(numVertices);
+        assimpMesh.setNumVertices(numVertices);
         //var assimpVtx = new Module.aiVector3D();
         
         
@@ -377,23 +443,28 @@ var AssimpToThreeJS = (function() {
     }
 
     function saveIndices(threeMesh, assimpMesh) {
-        var indices = threeMesh.geometry.getIndex();
-        var numIndices = indices.count;
-        var numTris = numIndices / 3;
+        var indices = threeMesh.geometry.getIndex(),
+            numIndices = indices.count,
+            numTris = numIndices / 3;
+
         assimpMesh.allocateTris(numTris);
-        
-        var t = assimpMesh.getFace(0);
+        assimpMesh.setNumFaces(numTris);
         
         for (var triIdx = 0, idxIdx = 0; triIdx < numTris; ++triIdx) {
-            assimpMesh.getFace(triIdx).setIndex(0, indices[idxIdx++]);
-            assimpMesh.getFace(triIdx).setIndex(1, indices[idxIdx++]);
-            assimpMesh.getFace(triIdx).setIndex(2, indices[idxIdx++]);
+            var face = assimpMesh.getFace(triIdx);
+            face.setNumIndices(3);
+            face.allocateIndices(3);
+            face.setIndex(0, indices.array[idxIdx++]);
+            face.setIndex(1, indices.array[idxIdx++]);
+            face.setIndex(2, indices.array[idxIdx++]);
+            assimpMesh.setFace(triIdx, face);
         }
     }
 
     function saveNormals(threeMesh, assimpMesh) {
-        var normals = threeMesh.geometry.getAttribute('normal');
-        var numVertices = normals.count;
+        var normals = threeMesh.geometry.getAttribute('normal'),
+            numVertices = normals.count;
+
         assimpMesh.allocateNormals(numVertices);
         //var assimpNrm = new Module.aiVector3D();
         
@@ -404,39 +475,240 @@ var AssimpToThreeJS = (function() {
         //assimpNrm.delete();
     }
 
-    function saveMesh(assimpScene, threeMesh) {
+    function saveVertexColors(threeMesh, assimpMesh, clrSetIndex) {
+        var colors = threeMesh.geometry.getAttribute('color');//,
+        var b1 = colors !== null;
+        var b2 = colors ===  undefined;
+            //numVertices = colors.count;
+
+        assimpMesh.allocateVertexColors(clrSetIndex, numVertices);
+
+        for (var clrIdx = 0, fltIdx = 0; clrIdx < numVertices; ++clrIdx) {
+            assimpMesh.setVertexColor(uvSetIndex, uvIdx, colors.array[fltIdx++], color.array[fltIdx++], color.array[fltIdx++]);
+        }
+    }
+
+    function saveTextureCoords(threeMesh, assimpMesh, uvSetIndex) {
+        var uvs = threeMesh.geometry.getAttribute('uv');
+        var numVertices = uvs.count;
+        assimpMesh.allocateTextureCoords(uvSetIndex, numVertices);
+        assimpMesh.setNumUVComponents(uvSetIndex, 2);
+
+        for (var uvIdx = 0, fltIdx = 0; uvIdx < numVertices; ++uvIdx) {
+            assimpMesh.setTextureCoord2(uvSetIndex, uvIdx, uvs.array[fltIdx++], uvs.array[fltIdx++]);
+        }
+    }
+
+    function saveMesh(assimpScene, threeMesh, meshIndex) {
         var assimpMesh = new Module.aiMesh();
         assimpMesh.setPrimitiveTypes(Module.aiPrimitiveType.TRIANGLE.value);
         
-        if(threeMesh.geometry.getAttribute('position') !== null) {
+        if(threeMesh.geometry.getAttribute('position') !== undefined) {
             savePositions(threeMesh, assimpMesh);
         }
-        if(threeMesh.geometry.getAttribute('index') !== null) {
+        if(threeMesh.geometry.getIndex() !== null) {
             saveIndices(threeMesh, assimpMesh);
         }
-        if(threeMesh.geometry.getAttribute('normal') !== null) {
+        if(threeMesh.geometry.getAttribute('normal') !== undefined) {
             saveNormals(threeMesh, assimpMesh);
         }
-        if(threeMesh.geometry.getAttribute('color') !== null) {
-            //saveVertexColors(threeMesh, assimpMesh);
+        if(threeMesh.geometry.getAttribute('color') !== undefined) {
+            assimpMesh.setNumColorChannels(1);
+            saveVertexColors(threeMesh, assimpMesh, 0);
         }
-        if(threeMesh.geometry.getAttribute('uv') !== null) {
-            //saveTextureCoords(threeMesh, assimpMesh);
+        if(threeMesh.geometry.getAttribute('uv') !== undefined) {
+            //assimpMesh.setNumUVChannels(1);
+            saveTextureCoords(threeMesh, assimpMesh, 0);
         }
-        if(threeMesh.geometry.getAttribute('uv2') !== null) {
-            //saveTextureCoords(threeMesh, assimpMesh);
+        if(threeMesh.geometry.getAttribute('uv2') !== undefined) {
+            //simpMesh.setNumUVChannels(2);
+            saveTextureCoords(threeMesh, assimpMesh, 1);
         }
         
+        assimpScene.setMesh(meshIndex, assimpMesh);
+        return assimpMesh;
+        //assimpScene.
+    }
+
+    //function countMeshNodes(threeNode) {
+     //   threeNode.traverse(function(node) {
+     //       if (node instanceof THREE.Mesh) {
+     //           ++numMeshes;
+     //       }
+     //   }
+     //   for each child, call again
+    //}
+
+    /*
+    function saveChildren(assimpScene, assimpNode, threeNode) {
+        var i = 0,
+            assimpChildNode = null,
+            numChildren = threeNode.children.length;
+
+        assimpChildNode.allocateChildren(numChildren);
+        assimpNode.setNumChildren(numChildren);
+        
+        for (i = 0; i < numChildren; ++i) {
+            assimpChildNode = new Module.aiNode();
+            assimpNode.
+            assimpNode.setChild(i, assimpChildNode);
+            saveNode(assimpScene, assimpChildNode, threeNode.children[i]);
+        }
+    }
+    */
+
+    function saveNode(assimpScene, assimpNode, threeNode) {
+        var i = 0,
+            assimpChildNode = null,
+            numChildren = threeNode.children.length;
+
+        if (numChildren > 0) {
+            assimpNode.allocateChildren(numChildren);
+        }
+        assimpNode.setNumChildren(numChildren);
+        assimpNode.setName(threeNode.name);
+
+        if (threeNode instanceof THREE.Mesh) {
+            var sceneMeshIndex = assimpScene.getNumMeshes();
+            var assimpMesh = saveMesh(assimpScene, threeNode, sceneMeshIndex);
+            assimpScene.setMesh(sceneMeshIndex, assimpMesh);
+            assimpScene.setNumMeshes(sceneMeshIndex + 1);
+            assimpNode.setNumMeshes(1);
+            assimpNode.setMeshIndex(0, sceneMeshIndex);
+            console.log("Mesh Num Faces: " + assimpMesh.getNumFaces());
+            console.log("Mesh Num Vertss: " + assimpMesh.getNumVertices());
+            // Create assimp node.
+            // Create assimp mesh.
+            
+            // Add mesh to scene.
+            // Add mesh to node.
+            // Add node to parent.
+            //assimpNode
+            // Set xform.
+            //saveMesh(assimpScene, node);
+            //saveChildren(assimpScene, assimpNode, threeNode);
+        } else if (threeNode instanceof THREE.Material) {
+            //saveMaterial(assimpScene, assimpScene, threeNode);
+        } else if (threeNode instanceof THREE.Texture) {
+            //saveTexture(assimpScene, node);
+        //} else if (threeNode instanceof THREE.Animation) {
+            //saveAnimation(assimpScene, node);
+        } else if (threeNode instanceof THREE.Camera) {
+            //saveCamera(assimpScene, node);
+            //saveChildren(assimpScene, assimpNode, threeNode);
+        } else if (threeNode instanceof THREE.Bone) {
+            //saveBone(assimpScene, node);
+            //saveChildren(assimpNode, threeNode);
+        } else if (threeNode instanceof THREE.Group) {
+            //saveChildren(assimpScene, assimpNode, threeNode);
+        } else if (threeNode instanceof THREE.Scene) {
+            //saveChildren(assimpScene, assimpNode, threeNode);
+        } else if (threeNode instanceof THREE.Object3D) {
+            //saveChildren(assimpScene, assimpNode, threeNode);
+        }
+
+        //var assimpMat4 = threeMat4ToAssimpMat4(threeNode.matrix);
+        //assimpNode.setTransformation(assimpMat4);
+        //assimpMat4.delete();
+        assimpNode.getTransformation().set(threeNode.matrix.elements[0],
+                                           threeNode.matrix.elements[1],
+                                           threeNode.matrix.elements[2],
+                                           threeNode.matrix.elements[3],
+                                           threeNode.matrix.elements[4],
+                                           threeNode.matrix.elements[5],
+                                           threeNode.matrix.elements[6],
+                                           threeNode.matrix.elements[7],
+                                           threeNode.matrix.elements[8],
+                                           threeNode.matrix.elements[9],
+                                           threeNode.matrix.elements[10],
+                                           threeNode.matrix.elements[11],
+                                           threeNode.matrix.elements[12],
+                                           threeNode.matrix.elements[13],
+                                           threeNode.matrix.elements[14],
+                                           threeNode.matrix.elements[15]);
+
+        for (i = 0; i < numChildren; ++i) {
+            assimpChildNode = new Module.aiNode();
+            assimpChildNode.setParent(assimpNode);
+            assimpNode.setChild(i, assimpChildNode);
+            saveNode(assimpScene, assimpChildNode, threeNode.children[i]);
+        }
+    }
+
+    function saveContentsHack(assimpScene) {
+        var exporter = new Module.Exporter();
+        var str = exporter.exportToString(assimpScene, 'collada', null);
+        exporter.delete();
+        return str;
     }
 
     function saveContents(threeScene) {
-        var assimpScene = new Module.aiScene();
+        var assimpScene = new Module.aiScene(),
+            numMeshes = 0,
+            numMaterials = 0,
+            numTextures = 0,
+            numLights = 0,
+            numAnimations = 0,
+            numCameras = 0,
+            numBones = 0;
+
+            //need to figure out nodes!!!!
+
         threeScene.traverse(function(node) {
 
             if (node instanceof THREE.Mesh) {
-                saveMesh(assimpScene, node);
+                ++numMeshes;
             } else if (node instanceof THREE.Material) {
-                //saveMaterial(assimpScene, node);
+                ++numMaterials;
+            } else if (node instanceof THREE.Texture) {
+                ++numTextures;
+            //} else if (node instanceof THREE.Animation) {
+            //    ++numAnimations;
+            } else if (node instanceof THREE.Camera) {
+                ++numCameras;
+            } else if (node instanceof THREE.Bone) {
+                ++numBones;
+            }
+        });
+
+        var assimpRootNode = new Module.aiNode();
+        assimpScene.setRootNode(assimpRootNode);
+        
+        // PROBLEM IS HERE!!!
+        assimpScene.allocateMeshes(numMeshes);
+        assimpScene.allocateMaterials(numMaterials);
+        assimpScene.allocateTextures(numTextures);
+        assimpScene.allocateCameras(numCameras);
+
+
+        var n1 = assimpScene.getNumMeshes();
+        assimpScene.setNumMeshes(0); // Reset count back to 0.
+        assimpScene.setNumMaterials(numMaterials);
+        assimpScene.setNumAnimations(numAnimations);
+        assimpScene.setNumTextures(numTextures);
+        assimpScene.setNumLights(numLights);
+        assimpScene.setNumCameras(numCameras);
+
+        //assimpScene.setMesh();
+        //assimpScene.setMaterial();
+        //asimpScene.setAnimation();
+        ///assimpScene.setTexture();
+        //assimpScene.setLight();
+
+        saveNode(assimpScene, assimpRootNode, threeScene);
+        /*
+        var meshIndex = 0;
+        threeScene.traverse(function(node) {
+
+            if (node instanceof THREE.Mesh) {
+                // Create assimp node.
+                // Create assimp mesh.
+                // Add mesh to scene.
+                // Add mesh to node.
+                // Add node to parent.
+                saveMesh(assimpScene, node, meshIndex++);
+            } else if (node instanceof THREE.Material) {
+                saveMaterial(assimpScene, node);
             } else if (node instanceof THREE.Texture) {
                 //saveTexture(assimpScene, node);
             //} else if (node instanceof THREE.Animation) {
@@ -447,8 +719,9 @@ var AssimpToThreeJS = (function() {
                 //saveBone(assimpScene, node);
             }
         });
+        */
         var exporter = new Module.Exporter();
-        var str = exporter.exportToString(assimpScene, 'dae', null);
+        var str = exporter.exportToString(assimpScene, 'collada', null);
         exporter.delete();
         assimpScene.delete();
         
@@ -458,5 +731,7 @@ var AssimpToThreeJS = (function() {
     return {
         loadContents: loadContents,
         saveContents: saveContents,
+        loadContentsHack: loadContentsHack,
+        saveContentsHack: saveContentsHack,
     };
 })();
