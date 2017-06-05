@@ -31,7 +31,7 @@ TODO:
 
 Matrix4x4 ctor seems to be broken.
 
-Using "-s SAFE_HEAP=1" will cause a crash on export due to mem alignment issues.  They will likely happen in the material export.
+Using "-s SAFE_HEAP=1" will cause a crash on export due to mem alignment issues.  They will likely happen in the material export.  Maybe look into wasm?
 
 For unbound types:
 Pay attention to ordering of sources in makefile.  Also, make sure to include the appropriate headers in embind files.

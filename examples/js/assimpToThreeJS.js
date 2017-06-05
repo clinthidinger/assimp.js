@@ -3,6 +3,7 @@
 var AssimpToThreeJS = (function() {
 
     'use strict';
+    var ASSIMP = window.ASSIMP({noInitialRun: true});
     //var camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
     //camera.position.z = 400;
 
@@ -255,10 +256,10 @@ var AssimpToThreeJS = (function() {
 
         loadPositions(mesh, geom);
         
-        if (primType === Module.aiPrimitiveType.TRIANGLE.value) {
+        if (primType === ASSIMP.aiPrimitiveType.TRIANGLE.value) {
             loadTriIndices(mesh, geom);
         }
-        else if (primType === Module.aiPrimitiveType.POLYGON.value) {
+        else if (primType === ASSIMP.aiPrimitiveType.POLYGON.value) {
             loadPolyIndices(mesh, geom);
         }
         else {
@@ -315,9 +316,9 @@ var AssimpToThreeJS = (function() {
     }
 
     function threeMat4ToAssimpMat4(threeMat4) {
-        var m0 = new Module.aiMatrix3x3();
-        var m1 = new Module.aiMatrix4x4();
-        var assimpMat4 = new Module.aiMatrix4x4(threeMat4.elements[0], threeMat4.elements[1], threeMat4.elements[2], threeMat4.elements[3],
+        var m0 = new ASSIMP.aiMatrix3x3();
+        var m1 = new ASSIMP.aiMatrix4x4();
+        var assimpMat4 = new ASSIMP.aiMatrix4x4(threeMat4.elements[0], threeMat4.elements[1], threeMat4.elements[2], threeMat4.elements[3],
                                                 threeMat4.elements[4], threeMat4.elements[5], threeMat4.elements[6], threeMat4.elements[7],
                                                 threeMat4.elements[8], threeMat4.elements[9], threeMat4.elements[10], threeMat4.elements[11],
                                                 threeMat4.elements[12], threeMat4.elements[13], threeMat4.elements[14], threeMat4.elements[15]);
@@ -349,8 +350,9 @@ var AssimpToThreeJS = (function() {
     }
 
     function loadContentsHack(contents) {
-        var importer = new Module.Importer();
-        var assimpScene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
+        var importer = new ASSIMP.Importer();
+    var importer = new Module.Importer();
+        var assimpScene = importer.readFileFromMemory(contents, ASSIMP.GetTargetRealtimeMaxQualityFlags());
         return assimpScene;
     }
 
@@ -358,8 +360,9 @@ var AssimpToThreeJS = (function() {
         var i = 0;
 
         var threeScene = new THREE.Scene();
-        var importer = new Module.Importer();
-        var assimpScene = importer.readFileFromMemory(contents, Module.GetTargetRealtimeMaxQualityFlags());
+        var importer = new ASSIMP.Importer();
+        //var importer = new Module.Importer();
+        var assimpScene = importer.readFileFromMemory(contents, ASSIMP.GetTargetRealtimeMaxQualityFlags());
 
         var root = assimpScene.getRootNode();
         console.log(root.getName());
@@ -373,7 +376,7 @@ var AssimpToThreeJS = (function() {
             }
         }
 
-        //var exporter = new Module.Exporter();
+        //var exporter = new ASSIMP.Exporter();
         //exporter.exportToString(assimpScene, 'collada', null);
         //exporter.delete();
         var rootNode = assimpScene.getRootNode();
@@ -424,7 +427,7 @@ var AssimpToThreeJS = (function() {
         var numVertices = positions.count;
         assimpMesh.allocateVertices(numVertices);
         assimpMesh.setNumVertices(numVertices);
-        //var assimpVtx = new Module.aiVector3D();
+        //var assimpVtx = new ASSIMP.aiVector3D();
         
         
         //assert(positions.array.length === numVertices);
@@ -466,7 +469,7 @@ var AssimpToThreeJS = (function() {
             numVertices = normals.count;
 
         assimpMesh.allocateNormals(numVertices);
-        //var assimpNrm = new Module.aiVector3D();
+        //var assimpNrm = new ASSIMP.aiVector3D();
         
         for (var nrmIdx = 0, fltIdx = 0; nrmIdx < numVertices; ++nrmIdx) {
             //assimpNrm.set(normals.array[fltIdx++], normals.array[fltIdx++], normals.array[fltIdx++]);
@@ -500,8 +503,8 @@ var AssimpToThreeJS = (function() {
     }
 
     function saveMesh(assimpScene, threeMesh, meshIndex) {
-        var assimpMesh = new Module.aiMesh();
-        assimpMesh.setPrimitiveTypes(Module.aiPrimitiveType.TRIANGLE.value);
+        var assimpMesh = new ASSIMP.aiMesh();
+        assimpMesh.setPrimitiveTypes(ASSIMP.aiPrimitiveType.TRIANGLE.value);
         
         if(threeMesh.geometry.getAttribute('position') !== undefined) {
             savePositions(threeMesh, assimpMesh);
@@ -549,7 +552,7 @@ var AssimpToThreeJS = (function() {
         assimpNode.setNumChildren(numChildren);
         
         for (i = 0; i < numChildren; ++i) {
-            assimpChildNode = new Module.aiNode();
+            assimpChildNode = new ASSIMP.aiNode();
             assimpNode.
             assimpNode.setChild(i, assimpChildNode);
             saveNode(assimpScene, assimpChildNode, threeNode.children[i]);
@@ -628,7 +631,7 @@ var AssimpToThreeJS = (function() {
                                            threeNode.matrix.elements[15]);
 
         for (i = 0; i < numChildren; ++i) {
-            assimpChildNode = new Module.aiNode();
+            assimpChildNode = new ASSIMP.aiNode();
             assimpChildNode.setParent(assimpNode);
             assimpNode.setChild(i, assimpChildNode);
             saveNode(assimpScene, assimpChildNode, threeNode.children[i]);
@@ -636,14 +639,14 @@ var AssimpToThreeJS = (function() {
     }
 
     function saveContentsHack(assimpScene) {
-        var exporter = new Module.Exporter();
+        var exporter = new ASSIMP.Exporter();
         var str = exporter.exportToString(assimpScene, 'collada', null);
         exporter.delete();
         return str;
     }
 
     function saveContents(threeScene) {
-        var assimpScene = new Module.aiScene(),
+        var assimpScene = new ASSIMP.aiScene(),
             numMeshes = 0,
             numMaterials = 0,
             numTextures = 0,
@@ -671,7 +674,7 @@ var AssimpToThreeJS = (function() {
             }
         });
 
-        var assimpRootNode = new Module.aiNode();
+        var assimpRootNode = new ASSIMP.aiNode();
         assimpScene.setRootNode(assimpRootNode);
         
         // PROBLEM IS HERE!!!
@@ -720,7 +723,7 @@ var AssimpToThreeJS = (function() {
             }
         });
         */
-        var exporter = new Module.Exporter();
+        var exporter = new ASSIMP.Exporter();
         var str = exporter.exportToString(assimpScene, 'collada', null);
         exporter.delete();
         assimpScene.delete();

@@ -1,22 +1,18 @@
 EMCC=emcc
-#EMCC=EMCC_DEBUG=1 emcc -v
 IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp/contrib \
            -Iassimp/contrib/openddlparser/include -Iassimp/contrib/clipper -Iassimp/contrib/ConvertUTF \
            -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
            -Iinclude
-#EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s SAFE_HEAP=1 -s TOTAL_MEMORY=64MB
-# In order to use safe heap, we may need a custom a new.  Check operator new  in Importer.cpp.
-EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s TOTAL_MEMORY=64MB
-#EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -s SAFE_HEAP=1 -s TOTAL_MEMORY=64MB
-# -s MODULARIZE=1 
-# see https://github.com/syl22-00/pocketsphinx.js/wiki/Emscripten-parameters
-#CFLAGS=$(EFLAGS) -std=c++11
-#-v enables Debug mode  
-CPPFLAGS=$(EFLAGS) -std=c++11 -g4 --js-opts 0 
-CFLAGS=$(EFLAGS) -g4 --js-opts 0 -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
-LDFLAGS_FULL=$(EFLAGS)
-#LDFLAGS_MIN=$(EFLAGS) -O2 --closure 1 
-LDFLAGS_MIN=$(EFLAGS) -O2
+# NOTE: "-s SAFE_HEAP=1" is breaking things.  It would be nice to use it for debug builds.
+
+EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s TOTAL_MEMORY=64MB -s MODULARIZE=1
+debug: EFLAGS += -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -g4 --js-opts 0
+# NOTE: If we use  --closure 1 and -s MODULARIZE=1, then we will have to use -s EXPORTED_FUNCTIONS="['_func1']" and list all of the funcs.
+assimp.js: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1
+
+CPPFLAGS=$(EFLAGS) -std=c++11
+CFLAGS=$(EFLAGS) -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
+LDFLAGS=$(EFLAGS)
 
 DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_X_IMPORTER=1 \
@@ -92,7 +88,7 @@ DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_ASSBIN_EXPORTER=1 \
 -DASSIMP_BUILD_NO_C4D_EXPORTER=1 
 
-
+# These are the files we support:
 #-DASSIMP_BUILD_NO_OBJ_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_COLLADA_EXPORTER=1 \
 #-DASSIMP_BUILD_NO_STL_EXPORTER=1 \
@@ -212,17 +208,6 @@ assimp/contrib/zlib/trees.c \
 assimp/contrib/zlib/uncompr.c \
 assimp/contrib/zlib/zutil.c
 
-#assimp/contrib/ConvertUTF/ConvertUTF.c \
-#
-#
-
-# MODULARIZE
-# COPY zconf.h
-#OBJ = assimp.js
-#EMBINDSRC = AnimEmbind.cpp CameraEmbind.cpp Color4Embind.cpp ExporterEmbind.cpp LightEmbind.cpp ImporterEmbind.cpp \
-#      		MaterialEmbind.cpp Matrix3x3Embind.cpp Matrix4x4Embind.cpp MeshEmbind.cpp PostProcessEmbind.cpp \
-#      		QuaternionEmbind.cpp SceneEmbind.cpp TextureEmbind.cpp TypesEmbind.cpp Vector2Embind.cpp \
-#            Vector3Embind.cpp 
 EMBINDSRC = \
 src/AnimEmbind.cpp \
 src/CameraEmbind.cpp \
@@ -242,50 +227,15 @@ src/Vector3Embind.cpp \
 src/ImporterEmbind.cpp \
 src/ExporterEmbind.cpp 
 
-
- #ASSIMPSRC = $(filter-out src/bar.cpp, $(wildcard assimp/code/*.cpp))
- #ASSIMPSRC = assimp/code/*.cpp
- #Exclude c4d.
- #EXCLUDE=$(subst assimp/code/C4DImporter.cpp,,${ASSIMPSRC})
- # Exclude c4d since it is for msvc only.
-#ASSIMPSRC := $(shell find assimp/code ! -name "C4DImporter.cpp" -name "*.cpp")
-#ASSIMPSRC = assimp/code/*.cpp
-#SRC = $(ASSIMPSRC) $(EMBINDSRC)
 SRC = $(EMBINDSRC) $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC) $(ASSIMP_CONTRIB_SRC)
-#SRC = $(ASSIMP_CORE_SRC) $(ASSIMP_FILE_FORMAT_SRC)
-#OBJ = $(SRC:.cpp=.bc)
-#OBJ = $($($(SRC:.cpp=.bc):.cc=.bc):.c=.bc)
-#OBJ = $(SRC:.cpp=.bc)
-#OBJ = $(OBJ:.cc=.bc)
-#OBJ = $(OBJ:.c=.bc)
 OBJ = $(addsuffix .bc, $(basename $(SRC)))
-#OBJ = $(OBJ_CPP) $(OBJ_CC) $(OBJ_C)
 TARGET = assimp.js
-# TODO SRC = src/*.cpp assimp/code/*.cpp
 
-#SRC = AnimEmbind.cpp CameraEmbind.cpp TypesEmbind.cpp
-#assimpjsmake_min: use closure compiler
+assimp.js: $(OBJ)
+	$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
-#all: $(SRC) $(LIB)
-
-assimp.js: $(OBJ) 
-	$(EMCC) $(LDFLAGS_FULL) $(OBJ) -o $(TARGET)
-
-#.cpp.bc:
-#	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) $(LDFLAGS_FULL)  $< -o $@
-
-#assimp.js: $(SRC)
-#	$(EMCC) $(IFLAGS) $(CFLAGS) $(DISABLEFLAGS) $(LDFLAGS_FULL) -o $(OBJ)  $(SRC)
-
-#%.min.js: %.bc
-# 	$(EMCC) $(IFLAGS) $(CFLAGS) $(LDFLAGS_MIN) -o $(SRC) $^
-   
-#%.js: %.bc
-#	$(EMCC) $(IFLAGS) $(CFLAGS) $(LDFLAGS_FULL) -o $(SRC) $^
-
-#all: $(SRC)
-
-#.cpp.bc:
+debug: $(OBJ)
+		$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
 %.bc: %.cpp
 	$(EMCC) $(IFLAGS) $(CPPFLAGS) $(DISABLEFLAGS) -o $@ $^
@@ -301,15 +251,6 @@ assimp.js: $(OBJ)
 clean:
 	rm -f $(OBJ) $(TARGET)
 
-#emcc --bind  -std=c++11 -o assimp.js -Iassimp/include/ -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1 -Dprivate=public assimpEmbind.cpp	
-#incstructions
-#0) install emscripten and make sure emcc is in path
-#!1) git clone
-#2) git submodule update --init --recursive
-#3) mkdir assimp/build
-#4) cd assimp/build
-#5) cmake ..
-#
 
 
 
