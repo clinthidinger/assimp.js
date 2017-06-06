@@ -2,8 +2,11 @@
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
 #include "assimp/quaternion.h"
+#include "assimp/quaternion.inl"
 #include "assimp/vector3.h"
+#include "assimp/vector3.inl"
 #include "assimp/matrix3x3.h"
+#include "assimp/matrix3x3.inl"
 
 using namespace emscripten;
 
@@ -42,11 +45,11 @@ EMSCRIPTEN_BINDINGS(assimp_quaternion)
     class_<aiQuaternion>("aiQuaternion")
         .constructor<>()
         .constructor<TReal, TReal, TReal, TReal>()
-        //.constructor<const aiMatrix3x3t<TReal>&>()
-        //.constructor<TReal, TReal, TReal>()
-        //.constructor<aiVector3D, TReal>()
+        .constructor<const aiMatrix3x3&>()
+        .constructor<TReal, TReal, TReal>()
+        .constructor<aiVector3D, TReal>()
         //.constructor<aiVector3D>()
-        .constructor<const aiQuaternion&>()
+        //.constructor<const aiQuaternion&>()
         .function("op_mult", &aiQuaternion::operator*)
         .function("op_equal_to", &aiQuaternion::operator==)
         .function("op_not_equal_to", &aiQuaternion::operator!=)
