@@ -2,6 +2,7 @@
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
 #include "assimp/vector2.h"
+#include "assimp/vector2.inl"
 
 using namespace emscripten;
 

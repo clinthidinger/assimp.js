@@ -59,7 +59,7 @@ void operator delete[](void * p)
 
 namespace aiNodeEmbind
 {
-	DefineGetter(aiNode, aiString &, mName, Name)
+	//DefineGetter(aiNode, aiString &, mName, Name)
 	DefineGetterSetter(aiNode, aiMatrix4x4 &, mTransformation, Transformation)
 	DefineGetterSetter(aiNode, aiNode *, mParent, Parent)
 	DefineGetterSetter(aiNode, unsigned int, mNumChildren, NumChildren)
@@ -67,6 +67,10 @@ namespace aiNodeEmbind
 	DefineGetterSetter(aiNode, unsigned int, mNumMeshes, NumMeshes)
 	DefineArrayGetterSetter(aiNode, unsigned int, mMeshes, Meshes, object.mNumMeshes)
 	DefineArrayIndexGetterSetter(aiNode, unsigned int, mMeshes, MeshIndex)
+	std::string getName(aiNode &node)
+	{
+		return std::string(node.mName.C_Str());
+	}
 	void setName(aiNode &node, const std::string &name)
 	{
 		node.mName = aiString(name);

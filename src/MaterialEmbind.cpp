@@ -9,14 +9,30 @@ using namespace emscripten;
 
 namespace aiUVTransformEmbind
 {
-    DefineGetterSetter(aiUVTransform, aiVector2D, mTranslation, Translation)
-    DefineGetterSetter(aiUVTransform, aiVector2D, mScaling, Scaling)
+    void setTranslation(aiUVTransform &xform, float x, float y)
+    {
+        xform.mTranslation.Set(x, y);
+    }
+    void setScaling(aiUVTransform &xform, float x, float y)
+    {
+        xform.mScaling.Set(x, y);
+    }
+    DefineGetter(aiUVTransform, aiVector2D, mTranslation, Translation)
+    DefineGetter(aiUVTransform, aiVector2D, mScaling, Scaling)
     DefineGetterSetter(aiUVTransform, float, mRotation, Rotation)
 }
 
 namespace aiMaterialPropertyEmbind
 {
-    DefineGetterSetter(aiMaterialProperty, aiString, mKey, Key)
+    //DefineGetterSetter(aiMaterialProperty, aiString, mKey, Key)
+    std::string getKey(aiMaterialProperty &prop)
+    {
+        return std::string(prop.mKey.C_Str());
+    }
+    void setKey(aiMaterialProperty &prop, const std::string &key)
+    {
+        prop.mKey = aiString(key);
+    }
     DefineGetterSetter(aiMaterialProperty, unsigned int, mSemantic, Semantic)
     DefineGetterSetter(aiMaterialProperty, unsigned int, mIndex, Index)
     DefineGetterSetter(aiMaterialProperty, unsigned int, mDataLength, DataLength)
@@ -30,6 +46,14 @@ namespace aiMaterialEmbind
     DefineGetterSetter(aiMaterial, unsigned int, mNumProperties, NumProperties)
     DefineGetterSetter(aiMaterial, unsigned int, mNumAllocated, NumAllocated)
 
+    aiMaterialProperty *getProperty(aiMaterial &mat, int index)
+    {
+        return mat.mProperties[index];
+    }
+    void setProperty(aiMaterial &mat, int index, aiMaterialProperty *prop)
+    {
+        mat.mProperties[index] = prop;
+    }
     aiReturn getIntBuffer(const aiMaterial &mat, const char* pKey, unsigned int type, unsigned int idx, int* pOut, unsigned int* pMax)
     {
         return mat.Get(pKey, type, idx, pOut, pMax);
@@ -246,6 +270,8 @@ EMSCRIPTEN_BINDINGS(assimp_material)
         .class_function("copyPropertyList", &aiMaterial::CopyPropertyList, allow_raw_pointers())
         .function("getProperties", &aiMaterialEmbind::getProperties, allow_raw_pointers())
         .function("setProperties", &aiMaterialEmbind::setProperties, allow_raw_pointers())
+        .function("getProperty", &aiMaterialEmbind::getProperty, allow_raw_pointers())
+        .function("setProperty", &aiMaterialEmbind::setProperty, allow_raw_pointers())
         .function("getNumProperties", &aiMaterialEmbind::getNumProperties)
         .function("setNumProperties", &aiMaterialEmbind::setNumProperties)
         .function("getNumAllocated", &aiMaterialEmbind::getNumAllocated)

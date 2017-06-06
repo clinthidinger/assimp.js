@@ -5,6 +5,7 @@
 #include "assimp/quaternion.h"
 #include "assimp/matrix3x3.h"
 #include "assimp/matrix4x4.h"
+#include "assimp/matrix4x4.inl"
 
 using namespace emscripten;
 

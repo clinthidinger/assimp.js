@@ -7,16 +7,51 @@ using namespace emscripten;
 
 namespace aiLightEmbind
 {
-    DefineGetterSetter(aiLight, aiString &, mName, Name)
+    const std::string getName(aiLight &light)
+    {
+        return std::string(light.mName.C_Str());
+    }
+    void setName(aiLight &light, const std::string &name)
+    {
+        light.mName = aiString(name);
+    }
+    void setPosition(aiLight &light, float x, float y, float z)
+    {
+        light.mPosition.Set(x, y, z);
+    }
+    void setDirection(aiLight &light, float x, float y, float z)
+    {
+        light.mDirection.Set(x, y, z);
+    }
+    void setColorDiffuse(aiLight &light, float r, float g, float b)
+    {
+        light.mColorDiffuse.r = r;
+        light.mColorDiffuse.g = g;
+        light.mColorDiffuse.b = b;
+    }
+    void setColorSpecular(aiLight &light, float r, float g, float b)
+    {
+        light.mColorSpecular.r = r;
+        light.mColorSpecular.g = g;
+        light.mColorSpecular.b = b;
+    }
+    void setColorAmbient(aiLight &light, float r, float g, float b)
+    {
+        light.mColorAmbient.r = r;
+        light.mColorAmbient.g = g;
+        light.mColorAmbient.b = b;
+    }
+
+    //DefineGetterSetter(aiLight, aiString &, mName, Name)
     DefineGetterSetter(aiLight, aiLightSourceType, mType, Type)
-    DefineGetterSetter(aiLight, aiVector3D &, mPosition, Position)
-    DefineGetterSetter(aiLight, aiVector3D &, mDirection, Direction)
+    DefineGetter(aiLight, aiVector3D &, mPosition, Position)
+    DefineGetter(aiLight, aiVector3D &, mDirection, Direction)
     DefineGetterSetter(aiLight, float, mAttenuationConstant, AttenuationConstant)
     DefineGetterSetter(aiLight, float, mAttenuationLinear, AttenuationLinear)
     DefineGetterSetter(aiLight, float, mAttenuationQuadratic, AttenuationQuadratic)
-    DefineGetterSetter(aiLight, aiColor3D &, mColorDiffuse, ColorDiffuse)
-    DefineGetterSetter(aiLight, aiColor3D &, mColorSpecular, ColorSpecular)
-    DefineGetterSetter(aiLight, aiColor3D &, mColorAmbient, ColorAmbient)
+    DefineGetter(aiLight, aiColor3D &, mColorDiffuse, ColorDiffuse)
+    DefineGetter(aiLight, aiColor3D &, mColorSpecular, ColorSpecular)
+    DefineGetter(aiLight, aiColor3D &, mColorAmbient, ColorAmbient)
     DefineGetterSetter(aiLight, float, mAngleInnerCone, AngleInnerCone)
     DefineGetterSetter(aiLight, float, mAngleOuterCone, AngleOuterCone)
 }

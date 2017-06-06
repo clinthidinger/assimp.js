@@ -7,10 +7,9 @@ IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp
 
 EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s TOTAL_MEMORY=64MB -s MODULARIZE=1
 debug: EFLAGS += -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -g4 --js-opts 0
-# NOTE: If we use  --closure 1 and -s MODULARIZE=1, then we will have to use -s EXPORTED_FUNCTIONS="['_func1']" and list all of the funcs.
-assimp.js: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1
+assimp.js: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1 --closure 1
 
-CPPFLAGS=$(EFLAGS) -std=c++11
+CPPFLAGS=$(EFLAGS) -std=c++11 -DAI_FORCE_INLINE=inline
 CFLAGS=$(EFLAGS) -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
 LDFLAGS=$(EFLAGS)
 

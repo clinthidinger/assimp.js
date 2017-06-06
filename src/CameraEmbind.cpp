@@ -4,14 +4,33 @@
 #include "assimp/camera.h"
 
 using namespace emscripten;
-//using namespace Assimp;
 
 namespace aiCameraEmbind
 {
-    DefineGetterSetter(aiCamera, aiString, mName, Name)
-    DefineGetterSetter(aiCamera, aiVector3D, mPosition, Position)
-    DefineGetterSetter(aiCamera, aiVector3D, mUp, Up)
-    DefineGetterSetter(aiCamera, aiVector3D, mLookAt, LookAt)
+    const std::string getName(aiCamera &camera)
+    {
+        return std::string(camera.mName.C_Str());
+    }
+    void setName(aiCamera &camera, const std::string &name)
+    {
+        camera.mName = aiString(name);
+    }
+    void setPosition(aiCamera &camera, float x, float y, float z)
+    {
+        camera.mPosition.Set(x, y, z);
+    }
+    void setUp(aiCamera &camera, float x, float y, float z)
+    {
+        camera.mUp.Set(x, y, z);
+    }
+    void setLookAt(aiCamera &camera, float x, float y, float z)
+    {
+        camera.mUp.Set(x, y, z);
+    }
+
+    DefineGetter(aiCamera, aiVector3D, mPosition, Position)
+    DefineGetter(aiCamera, aiVector3D, mUp, Up)
+    DefineGetter(aiCamera, aiVector3D, mLookAt, LookAt)
     DefineGetterSetter(aiCamera, float, mHorizontalFOV, HorizontalFOV)
     DefineGetterSetter(aiCamera, float, mClipPlaneNear, ClipPlaneNear)
     DefineGetterSetter(aiCamera, float, mClipPlaneFar, ClipPlaneFar)

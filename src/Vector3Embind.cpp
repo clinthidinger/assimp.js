@@ -2,6 +2,7 @@
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
 #include "assimp/vector3.h"
+#include "assimp/vector3.inl"
 #include "assimp/matrix3x3.h"
 #include "assimp/matrix4x4.h"
 
