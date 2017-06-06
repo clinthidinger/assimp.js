@@ -14,7 +14,6 @@ Go to https://kripken.github.io/emscripten-site/docs/getting_started/downloads.h
 Posssibly do:
 source ${YOUR_EMSCRIPTEN_DIR}/emsdk_env.sh
 
-
 git submodule update --init --recursive
 
 make
@@ -26,6 +25,15 @@ python -m SimpleHTTPServer 8000
 
 Then open http://localhost:8000/examples/example.html
 
+
+Rebuilding:
+
+make clean
+make
+
+Building a debug build:
+
+make debug
 
 TODO:
 
