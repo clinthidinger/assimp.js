@@ -67,6 +67,7 @@ EMSCRIPTEN_BINDINGS(assimp_light)
         ;   
 
     class_<aiLight>("aiLight")
+        .constructor<>()
         .constructor<aiLight>()
         .function("getName", &aiLightEmbind::getName)
         .function("setName", &aiLightEmbind::setName)

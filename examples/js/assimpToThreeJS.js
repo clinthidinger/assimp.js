@@ -207,8 +207,6 @@ var AssimpToThreeJS = (function() {
     }
 
     function loadBones(mesh, geom) {
-
-        //var bones = mesh.getBones(),
         var numBones = mesh.getNumBones(),
             boneIdx,
             bone,
@@ -216,19 +214,201 @@ var AssimpToThreeJS = (function() {
             weights,
             wtIdx,
             weight,
+            vtxId,
+            weightValue,
             mtx;
 
         for (boneIdx = 0; boneIdx < numBones; ++boneIdx) {
             bone = mesh.getBone(boneIdx);
             numWeights = bone.getNumWeights();
-            weights = bone.getWeights();
             for (wtIdx = 0; wtIdx < numWeights; ++wtIdx) {
-                weight = weights[weightIdx];
-                //weight.getVertexId();
-                //weight.getWeight();
+                weight = bone.getWeight(wtIdx);
+                vtxId = weight.getVertexId();
+                weightValue = weight.getWeight();
             }
             mtx = bone.getOffsetMatrix();
         }
+    }
+
+    function loadTexture(threeScene, texture) {
+
+    }
+
+    function loadMaterial(threeScene, material) {
+        var numProperties = material.getNumProperties();
+        var i = 0;
+        for (i = 0; i < numProperties; i++) {
+            var prop = material.getProperty(i);
+            var key = prop.getKey();
+            var type = prop.getType();
+        }
+    }
+
+    function loadCamera(threeScene, camera) {
+        var threeCam = new THREE.PerspectiveCamera(camera.getHorizontalFOV(),
+                                                   camera.getAspect(),
+                                                   camera.getClipPlaneNear(), 
+                                                   camera.getClipPlaneFar()),
+            pos = camera.getPosition(),
+            lookAt = camera.getLookAt(),
+            name = camera.getName();
+        if (threeScene.getObjectByName(name, false) !== null) {
+            return; // Make sure we don't re-add the default camera.
+        }
+        threeCam.name = name;
+        threeCam.position.set(pos.getX(), pos.getY(), pos.getZ());
+        threeCam.lookAt(new THREE.Vector3(lookAt.getX(), lookAt.getY(), lookAt.getZ()));
+        var projMtx = new ASSIMP.aiMatrix4x4();
+        camera.getCameraMatrix(projMtx)
+        threeCam.projectionMatrix = assimpMat4ToThreeMat4(projMtx);
+        projMtx.delete();
+        threeScene.add(threeCam);
+        console.log('add cam');
+    }
+
+    function getLightTarget(assimpLight) {
+        var pos = assimpLight.getPosition();
+        var dir = assimpLight.getDirection();
+        var threeTarget = new THREE.Vector3(pos.getX() + dir.getX(),
+                                            pos.getY() + dir.getY(),
+                                            pos.getZ() + dir.getZ());
+        return threeTarget;
+    }
+
+    function loadLight(threeScene, assimpLight) {
+        var lightType = assimpLight.getType(),
+            threeLight = null,
+            assimpDiffuseColor = assimpLight.getColorDiffuse(),
+            assimpAmbientColor = assimpLight.getColorAmbient(),
+            name = assimpLight.getName(),
+            pos = assimpLight.getPosition(),
+            threeDiffuseColor,
+            threeAmbientColor,
+            target;
+
+        if (threeScene.getObjectByName(name, false) !== null) {
+            return; // Make sure we don't re-add the default light.
+        }
+
+        if (lightType === ASSIMP.aiLightSourceType.AMBIENT) {
+            threeAmbientColor = new THREE.Color(assimpAmbientColor.getR(),
+                                                assimpAmbientColor.getB(),
+                                                assimpAmbientColor.getG());
+            threeLight = new THREE.AmbientLight(threeAmbientColor.getHex());
+        }
+        else if (lightType === ASSIMP.aiLightSourceType.POINT) {
+            threeLight = new THREE.PointLight(color, intensity, distance);
+        }
+        else if (lightType === ASSIMP.aiLightSourceType.DIRECTIONAL) {
+            threeDiffuseColor = new THREE.Color(assimpDiffuseColor.getR(),
+                                                assimpDiffuseColor.getB(),
+                                                assimpDiffuseColor.getG());
+            threeLight = new THREE.DirectionalLight(threeDiffuseColor.getHex(), 1);
+            //threeLight.target = getLightTarget(assimpLight); Needs to be an object, not a vec3!
+        }
+        else if (lightType === ASSIMP.aiLightSourceType.SPOT) {
+            threeLight = new THREE.SpotLight();
+            threeLight.angle = light.getAngleOuterCone();
+            threeLight.penumbra = light.getAngleInnerCone();
+            threeLight.decay = light.getAttenuationConstant();
+            threeLight.color.setRGB(diffuseColor.getR(), diffuseColor.getG(), diffuseColor.getB());
+            //threeLight.target = getLightTarget(assimpLight); Needs to be an object, not a vec3!
+        }
+        else if (lightType === ASSIMP.aiLightSourceType.UNDEFINED) {
+            threeDiffuseColor = new THREE.Color(assimpDiffuseColor.getR(),
+                                                assimpDiffuseColor.getB(),
+                                                assimpDiffuseColor.getG());
+            threeLight = new THREE.Light(threeDiffuseColor.getHex());
+        }
+
+        if (threeLight !== null) {
+            threeLight.name = name;
+            threeLight.position.set(pos.getX(), pos.getY(), pos.getZ());
+            threeLight.intensity = 1.0;
+            console.log('add light');
+            threeScene.add(threeLight);
+        }
+    }
+
+
+    function loadPositionKeys(animNode, tracks) {
+        var posTrackName = nodeName + '_positionKeys',
+            times = [],
+            values = [];
+
+        var numPositionKeys = animNode.getNumPositionKeys();
+        for (var posKeyIdx = 0; posKeyIdx < numPositionKeys; ++posKeyIdx) {
+            var posKey = animNode.getPositionKey(posKeyIdx);
+            var t = posKey.getTime();
+            var val = posKey.getValue();
+            times.push(t);
+            values.push(val);
+        }
+        var threePosTrack = new THREE.VectorKeyFrameTrack(posTrackName, times, values);
+        //threePosTrack.interpolation = ASSIMP.aiAnimBehaviour.;
+
+        return threePosTrack;
+    }
+
+    function loadRotationKeys(animNode, tracks) {
+        var rotTrackName = nodeName + '_rotationKeys',
+            times = [],
+            values = [];
+            
+        var numRotationKeys = animNode.getNumPositionKeys();
+        for (var rotKeyIdx = 0; rotKeyIdx < numRotationKeys; ++rotKeyIdx) {
+            var rotKey = animNode.getRotationKey(rotKeyIdx);
+            var t = rotKey.getTime();
+            var val = rotKey.getValue();
+            times.push(t);
+            values.push(val);
+        }
+        var threeRotTrack = new THREE.QuaternionKeyframeTrack(rotTrackName, times, values);
+
+        return threeRotTrack;
+    }
+
+    function loadScalingKeys(animNode, tracks) {
+        var scalTrackName = nodeName + '_scalingKeys',
+            times = [],
+            values = [];
+
+        var numScalingKeys = animNode.getNumScalingKeys();
+        for (var scalKeyIdx = 0; scalKeyIdx < numScalingKeys; ++scalKeyIdx) {
+            var scalKey = animNode.getScalingKey(scalKeyIdx);
+            var t = scalKey.getTime();
+            var val = scalKey.getValue();
+            times.push(t);
+            values.push(val);
+        }
+        var threeScalTrack = new THREE.VectorKeyFrameTrack(scalTrackName, times, values);
+
+        return threeScalTrack;
+    }
+
+    function loadAnimation(threeScene, animation) {
+        var name = animation.getName(),
+            durtaion = animation.getDuration(),
+            ticksPerSecond = animation.getTicksPerSecond(),
+            numChannels = animation.getNumChannels(),
+            numMeshChannels = animation.getNumMeshChannels();
+
+            var tracks = [];
+            for (var chanIdx = 0; chanIdx < numChannels; ++chanIdx ) {
+                var animNode = animation.getChannel(chanIdx);
+                var nodeName = animNode.getNodeName(); // name corresponds to bone or node name!!! add animations[] array to node
+                var threeNode = scene.getObjectByName( nodeName, true );
+                if (threeNode !== null) {
+                    tracks.push(loadPositionKeys(animNode));
+                    tracks.push(loadRotationKeys(animNode));
+                    tracks.push(loadScalingKeys(animNode));
+                    var threeAnimClip = new THREE.AnimationClip(name, duration, tracks); // Make a new clip for each node???
+                    threeNode.animations = [];
+                    threeNode.animations.push(threeAnimClip);
+                    //animNode.getPreState();
+                    //animNode.getPostState();
+                }
+            }
     }
 
     function loadMesh(mesh) {
@@ -267,29 +447,22 @@ var AssimpToThreeJS = (function() {
             console.log('Unsupported type: ' + primType);
             return;
         }
-
         if (mesh.hasNormals()) {
             loadNormals(mesh, geom);
         }
-
         if (mesh.hasTangentsAndBitangents()) {
             //tangents = mesh.getTangents();
             //bitangents = mesh.getBitangents();
         }
-
         if (mesh.hasVertexColors(0)) {
             loadVertexColors(mesh, geom, 0);
         }
-
         if (mesh.hasTextureCoords(0)) {
-            //numUVChannels = mesh.GetNumUVChannels();
             loadTextureCoords(mesh, geom, 0);
         }
-
         if (mesh.hasTextureCoords(1)) {
             loadTextureCoords(mesh, geom, 1);
         }
-
         if (mesh.hasBones()) {
             loadBones(mesh, geom);
         }
@@ -301,9 +474,8 @@ var AssimpToThreeJS = (function() {
         //    });
 
         threeMesh = new THREE.Mesh(geom);
-        return threeMesh;
 
-        //parentNode.add(threeMesh);
+        return threeMesh;
     }
 
     function assimpMat4ToThreeMat4(assimpMat4) {
@@ -312,6 +484,7 @@ var AssimpToThreeJS = (function() {
                       assimpMat4.getB1(), assimpMat4.getB2(), assimpMat4.getB3(), assimpMat4.getB4(),
                       assimpMat4.getC1(), assimpMat4.getC2(), assimpMat4.getC3(), assimpMat4.getC4(),
                       assimpMat4.getD1(), assimpMat4.getD2(), assimpMat4.getD3(), assimpMat4.getD4());
+
         return threeMat4;
     }
 
@@ -334,7 +507,7 @@ var AssimpToThreeJS = (function() {
             threeChildNode = null;
             //xformMat4 = null;
 
-        threeNode.name = assimpNode.getName().str();
+        threeNode.name = assimpNode.getName();
         threeNode.matrix = assimpMat4ToThreeMat4(assimpNode.getTransformation());
         
         for (i = 0; i < numMeshes; ++i) {
@@ -349,36 +522,12 @@ var AssimpToThreeJS = (function() {
         }
     }
 
-    function loadContentsHack(contents) {
-        var importer = new ASSIMP.Importer();
-    var importer = new Module.Importer();
-        var assimpScene = importer.readFileFromMemory(contents, ASSIMP.GetTargetRealtimeMaxQualityFlags());
-        return assimpScene;
-    }
-
     function loadContents(contents) {
         var i = 0;
 
         var threeScene = new THREE.Scene();
         var importer = new ASSIMP.Importer();
-        //var importer = new Module.Importer();
         var assimpScene = importer.readFileFromMemory(contents, ASSIMP.GetTargetRealtimeMaxQualityFlags());
-
-        var root = assimpScene.getRootNode();
-        console.log(root.getName());
-        var numChildren = root.getNumChildren();
-        for(i = 0; i < numChildren; ++i)
-        {
-            console.log(root.getChild(i).getName());
-            if(root.getChild(i).getNumMeshes() > 0) {
-                console.log("Mesh count: " + root.getChild(i).getNumMeshes());
-                console.log("Mesh index: " + root.getChild(i).getMeshIndex(0));
-            }
-        }
-
-        //var exporter = new ASSIMP.Exporter();
-        //exporter.exportToString(assimpScene, 'collada', null);
-        //exporter.delete();
         var rootNode = assimpScene.getRootNode();
 
         var numMeshes = assimpScene.getNumMeshes();
@@ -390,6 +539,7 @@ var AssimpToThreeJS = (function() {
 
         for (i = 0; i < numMaterials; ++i) {
             var mat = assimpScene.getMaterial(i);
+            loadMaterial(threeScene, mat);
         }
 
         var meshArray = [];
@@ -401,21 +551,23 @@ var AssimpToThreeJS = (function() {
 
         for (i = 0; i < numTextures; ++i) {
             var texture = assimpScene.getTexture(i);
+            loadTexture(threeScene, texture);
         }
         for (i = 0; i < numLights; ++i) {
-            var light = assimpScene.getLight(i);
+            var assimpLight = assimpScene.getLight(i);
+            loadLight(threeScene, assimpLight);
         }
         for (i = 0; i < numAnimations; ++i) {
             var animation = assimpScene.getAnimation(i);
+            loadAnimation(threeScene, animation);
         }
         for (i = 0; i < numCameras; ++i) {
             var camera = assimpScene.getCamera(i);
+            loadCamera(threeScene, camera);
         }
 
         importer.delete();
-        //var format = "collada"; //! @see Exporter.cpp line 98 for supported formats.
-        //var outStr = exporter.exportToString(scene, format, null);
-        //var h = 0;
+     
         return threeScene;
     }
 
@@ -527,43 +679,97 @@ var AssimpToThreeJS = (function() {
             //simpMesh.setNumUVChannels(2);
             saveTextureCoords(threeMesh, assimpMesh, 1);
         }
-        
         assimpScene.setMesh(meshIndex, assimpMesh);
-        return assimpMesh;
-        //assimpScene.
-    }
-
-    //function countMeshNodes(threeNode) {
-     //   threeNode.traverse(function(node) {
-     //       if (node instanceof THREE.Mesh) {
-     //           ++numMeshes;
-     //       }
-     //   }
-     //   for each child, call again
-    //}
-
-    /*
-    function saveChildren(assimpScene, assimpNode, threeNode) {
-        var i = 0,
-            assimpChildNode = null,
-            numChildren = threeNode.children.length;
-
-        assimpChildNode.allocateChildren(numChildren);
-        assimpNode.setNumChildren(numChildren);
         
-        for (i = 0; i < numChildren; ++i) {
-            assimpChildNode = new ASSIMP.aiNode();
-            assimpNode.
-            assimpNode.setChild(i, assimpChildNode);
-            saveNode(assimpScene, assimpChildNode, threeNode.children[i]);
-        }
+        return assimpMesh;
     }
-    */
+
+    function saveCamera(asssimpScene, threeCamera) {
+        var assimpCam = new ASSIMP.aiCamera();
+        assimpCam.setName(threeCamera.name);
+        assimpCam.setPosition(threeCamera.position.x, threeCamera.position.y, threeCamera.position.z);
+        //assimpCam.setLookAt(lookAt.x, lookAt.y, lookAt.z);
+        
+        if (threeCamera instanceof THREE.PerspectiveCamera) {
+            assimpCam.setAspect(threeCamera.aspect);    
+            assimpCam.setClipPlaneNear(threeCamera.near);
+            assimpCam.setClipPlaneFar(threeCamera.far);
+            assimpCam.setHorizontalFOV(threeCamera.fov);
+        }
+        else if (threeCamera instanceof THREE.OrthographicCamera) {
+            assimpCam.setClipPlaneNear(threeCamera.near);
+            assimpCam.setClipPlaneFar(threeCamera.far);
+        }
+
+        return assimpCam;
+    }
+
+    function getLightDirection(threeLight) {
+        var pos = threeLight.position,
+            target = threeLight.target.position,
+            dir = new THREE.Vector3(target.x - pos.x, target.y - pos.y, target.z - pos.z);
+        dir.normalize();
+
+        return dir;
+    }
+
+    function saveLight(assimpScene, threeLight, light) {
+        var assimpLight = new ASSIMP.aiLight(),
+            pos,
+            target,
+            dir,
+            intensity = threeLight.intensity;
+        
+        assimpLight.setName(threeLight.name);
+
+        if (threeLight instanceof THREE.AmbientLight) {
+            assimpLight.setType(ASSIMP.aiLightSourceType.AMBIENT);
+            assimpLight.setColorAmbient(threeLight.color.r * intensity,
+                                        threeLight.color.g * intensity,
+                                        threeLight.color.b * intensity);
+        } else if (threeLight instanceof THREE.PointLight) {
+            assimpLight.setType(ASSIMP.aiLightSourceType.POINT);
+            assimpLight.setColorDiffuse(threeLight.color.r * intensity,
+                                        threeLight.color.g * intensity,
+                                        threeLight.color.b * intensity);
+            pos = threeLight.position;
+            assimpLight.setPosition(pos.x, pos.y, pos.z);
+        } else if (threeLight instanceof THREE.DirectionalLight) {
+            assimpLight.setType(ASSIMP.aiLightSourceType.DIRECTIONAL);
+            assimpLight.setColorDiffuse(threeLight.color.r * intensity,
+                                        threeLight.color.g * intensity,
+                                        threeLight.color.b * intensity);
+            var dir = getLightDirection(threeLight);
+            assimpLight.setDirection(dir.x, dir.y, dir.z);
+        } else if (threeLight instanceof THREE.SpotLight) {
+            assimpLight.setType(ASSIMP.aiLightSourceType.SPOT);
+            assimpLight.setColorDiffuse(threeLight.color.r * intensity,
+                                        threeLight.color.g * intensity,
+                                        threeLight.color.b * intensity);
+            
+            assimpLight.setPosition(pos.x, pos.y, pos.z);
+            var dir = getLightDirection(threeLight);
+            assimpLight.setDirection(dir.x, dir.y, dir.z);
+            assimpLight.setAngleOuterCone(threeLight.angle);
+            assimpLight.setAngleInnerCone(threeLight.penumbra);
+            assimpLight.setAttenuationConstant(threeLight.decay);
+        } else {
+            assimpLight.setType(ASSIMP.aiLightSourceType.UNDEFINED);
+            assimpLight.setColorDiffuse(threeLight.color.r * intensity,
+                                        threeLight.color.g * intensity,
+                                        threeLight.color.b * intensity);
+        }
+
+        return assimpLight;
+    }
 
     function saveNode(assimpScene, assimpNode, threeNode) {
         var i = 0,
             assimpChildNode = null,
-            numChildren = threeNode.children.length;
+            numChildren = threeNode.children.length,
+            sceneIndex;
+
+        console.log('save: ' + threeNode.name);
 
         if (numChildren > 0) {
             assimpNode.allocateChildren(numChildren);
@@ -572,47 +778,35 @@ var AssimpToThreeJS = (function() {
         assimpNode.setName(threeNode.name);
 
         if (threeNode instanceof THREE.Mesh) {
-            var sceneMeshIndex = assimpScene.getNumMeshes();
-            var assimpMesh = saveMesh(assimpScene, threeNode, sceneMeshIndex);
-            assimpScene.setMesh(sceneMeshIndex, assimpMesh);
-            assimpScene.setNumMeshes(sceneMeshIndex + 1);
+            sceneIndex = assimpScene.getNumMeshes();
+            var assimpMesh = saveMesh(assimpScene, threeNode, sceneIndex);
+            assimpScene.setMesh(sceneIndex, assimpMesh);
+            assimpScene.setNumMeshes(sceneIndex + 1);
             assimpNode.setNumMeshes(1);
-            assimpNode.setMeshIndex(0, sceneMeshIndex);
-            console.log("Mesh Num Faces: " + assimpMesh.getNumFaces());
-            console.log("Mesh Num Vertss: " + assimpMesh.getNumVertices());
-            // Create assimp node.
-            // Create assimp mesh.
-            
-            // Add mesh to scene.
-            // Add mesh to node.
-            // Add node to parent.
-            //assimpNode
-            // Set xform.
-            //saveMesh(assimpScene, node);
-            //saveChildren(assimpScene, assimpNode, threeNode);
+            assimpNode.setMeshIndex(0, sceneIndex);
         } else if (threeNode instanceof THREE.Material) {
             //saveMaterial(assimpScene, assimpScene, threeNode);
         } else if (threeNode instanceof THREE.Texture) {
-            //saveTexture(assimpScene, node);
+            //saveTexture(assimpScene, threeNode);
         //} else if (threeNode instanceof THREE.Animation) {
-            //saveAnimation(assimpScene, node);
+            //saveAnimation(assimpScene, threeNode);
+        } else if (threeNode instanceof THREE.Light) {
+            sceneIndex = assimpScene.getNumLights();
+            var assimpLight = saveLight(assimpScene, threeNode);
+            //assimpScene.setLight(sceneIndex, assimpLight);
+            assimpScene.setNumLights(sceneIndex + 1);
         } else if (threeNode instanceof THREE.Camera) {
-            //saveCamera(assimpScene, node);
-            //saveChildren(assimpScene, assimpNode, threeNode);
+            sceneIndex = assimpScene.getNumCameras();
+            var assimpCam = saveCamera(assimpScene, threeNode);
+            //assimpScene.setCamera(sceneIndex, assimpCam);
+            assimpScene.setNumCameras(sceneIndex + 1);
         } else if (threeNode instanceof THREE.Bone) {
-            //saveBone(assimpScene, node);
-            //saveChildren(assimpNode, threeNode);
+            //saveBone(assimpScene, threeNode);
         } else if (threeNode instanceof THREE.Group) {
-            //saveChildren(assimpScene, assimpNode, threeNode);
         } else if (threeNode instanceof THREE.Scene) {
-            //saveChildren(assimpScene, assimpNode, threeNode);
         } else if (threeNode instanceof THREE.Object3D) {
-            //saveChildren(assimpScene, assimpNode, threeNode);
         }
 
-        //var assimpMat4 = threeMat4ToAssimpMat4(threeNode.matrix);
-        //assimpNode.setTransformation(assimpMat4);
-        //assimpMat4.delete();
         assimpNode.getTransformation().set(threeNode.matrix.elements[0],
                                            threeNode.matrix.elements[1],
                                            threeNode.matrix.elements[2],
@@ -638,12 +832,12 @@ var AssimpToThreeJS = (function() {
         }
     }
 
-    function saveContentsHack(assimpScene) {
-        var exporter = new ASSIMP.Exporter();
-        var str = exporter.exportToString(assimpScene, 'collada', null);
-        exporter.delete();
-        return str;
-    }
+    //function saveContentsHack(assimpScene) {
+    //    var exporter = new ASSIMP.Exporter();
+    //    var str = exporter.exportToString(assimpScene, 'collada', null);
+    //    exporter.delete();
+    //    return str;
+    //}
 
     function saveContents(threeScene) {
         var assimpScene = new ASSIMP.aiScene(),
@@ -667,6 +861,8 @@ var AssimpToThreeJS = (function() {
                 ++numTextures;
             //} else if (node instanceof THREE.Animation) {
             //    ++numAnimations;
+            } else if (node instanceof THREE.Light) {
+                ++numLights;
             } else if (node instanceof THREE.Camera) {
                 ++numCameras;
             } else if (node instanceof THREE.Bone) {
@@ -677,52 +873,22 @@ var AssimpToThreeJS = (function() {
         var assimpRootNode = new ASSIMP.aiNode();
         assimpScene.setRootNode(assimpRootNode);
         
-        // PROBLEM IS HERE!!!
         assimpScene.allocateMeshes(numMeshes);
         assimpScene.allocateMaterials(numMaterials);
         assimpScene.allocateTextures(numTextures);
         assimpScene.allocateCameras(numCameras);
+        assimpScene.allocateLights(numLights);
 
-
-        var n1 = assimpScene.getNumMeshes();
-        assimpScene.setNumMeshes(0); // Reset count back to 0.
-        assimpScene.setNumMaterials(numMaterials);
-        assimpScene.setNumAnimations(numAnimations);
-        assimpScene.setNumTextures(numTextures);
-        assimpScene.setNumLights(numLights);
-        assimpScene.setNumCameras(numCameras);
-
-        //assimpScene.setMesh();
-        //assimpScene.setMaterial();
-        //asimpScene.setAnimation();
-        ///assimpScene.setTexture();
-        //assimpScene.setLight();
+        // Reset counts back to 0.  Will be set on load.
+        assimpScene.setNumMeshes(0); 
+        assimpScene.setNumMaterials(0);
+        assimpScene.setNumAnimations(0);
+        assimpScene.setNumTextures(0);
+        assimpScene.setNumLights(0);
+        assimpScene.setNumCameras(0);
 
         saveNode(assimpScene, assimpRootNode, threeScene);
-        /*
-        var meshIndex = 0;
-        threeScene.traverse(function(node) {
-
-            if (node instanceof THREE.Mesh) {
-                // Create assimp node.
-                // Create assimp mesh.
-                // Add mesh to scene.
-                // Add mesh to node.
-                // Add node to parent.
-                saveMesh(assimpScene, node, meshIndex++);
-            } else if (node instanceof THREE.Material) {
-                saveMaterial(assimpScene, node);
-            } else if (node instanceof THREE.Texture) {
-                //saveTexture(assimpScene, node);
-            //} else if (node instanceof THREE.Animation) {
-                //saveAnimation(assimpScene, node);
-            } else if (node instanceof THREE.Camera) {
-                //saveCamera(assimpScene, node);
-            } else if (node instanceof THREE.Bone) {
-                //saveBone(assimpScene, node);
-            }
-        });
-        */
+       
         var exporter = new ASSIMP.Exporter();
         var str = exporter.exportToString(assimpScene, 'collada', null);
         exporter.delete();
@@ -734,7 +900,5 @@ var AssimpToThreeJS = (function() {
     return {
         loadContents: loadContents,
         saveContents: saveContents,
-        loadContentsHack: loadContentsHack,
-        saveContentsHack: saveContentsHack,
     };
 })();

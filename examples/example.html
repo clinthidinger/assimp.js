@@ -1,8 +1,15 @@
 <!doctype html>
 <html>
 <div id="container"></div>
-<input type="file" id="load" />
+<input type="file" id="load" accept=".dae,.obj,.stl,.fbx" />
 <!--<input type="file" id="file-output" />-->
+<label>Output Format:   </label>
+<select id="ddFormat" name="OutputFormat">
+  <option value="DAE">DAE</option>
+  <option value="OBJ">OBJ</option>
+  <option value="STL">STL</option>
+  <option value="FBX">FBX</option>
+</select>
 <input type="submit" id="save" value="Save"/>
 <h3>3D View:</h3>
 <pre id="file-content"></pre>
@@ -17,11 +24,37 @@
         mouseX = 0, mouseY = 0,
 	    windowHalfX = window.innerWidth / 2,
 	    windowHalfY = window.innerHeight / 2;
+    
         
     init();
     animate();
 
+    function checkFileSupport() {
+         // Check for the various File API support.
+        if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+          alert('The File APIs are not fully supported in this browser.');
+
+          return false;
+        }
+
+        return true;
+    }
+
+    function checkWebGL() {
+        if (!Detector.webgl) {
+            alert('WebGL is not fully supported in this browser.');
+
+            return false;
+        }
+
+        return true;
+    }
+
+
     function init() {
+
+
+
         camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
         camera.position.z = 400;
         scene = new THREE.Scene();
@@ -30,6 +63,7 @@
         //var material = new THREE.MeshBasicMaterial( { map: texture } );
         //mesh = new THREE.Mesh( geometry, material );
         //scene.add( mesh );
+        //renderer = Detector.webgl? new THREE.WebGLRenderer(): new THREE.CanvasRenderer();
         renderer = new THREE.WebGLRenderer();
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -40,6 +74,9 @@
         document.addEventListener('mousemove', onDocumentMouseMove, false);
         document.getElementById('load').addEventListener('change', readSingleFile, false);
         document.getElementById('save').addEventListener('click', writeSingleFile, false);
+        var container = document.getElementById('container');
+        container.addEventListener('dragover', handleDragOver, false);
+        container.addEventListener('drop', handleFileSelect, false);
     }
 
     function onWindowResize() {
@@ -61,10 +98,24 @@
     }
 
     function render() {
-        camera.position.x += (mouseX - camera.position.x) * .05;
-        camera.position.y += (-mouseY - camera.position.y) * .05;
-        camera.lookAt(scene.position);
+        //camera.position.x += (mouseX - camera.position.x) * .05;
+        //camera.position.y += (-mouseY - camera.position.y) * .05;
+        //camera.lookAt(scene.position);
         renderer.render(scene, camera);
+    }
+
+    function handleFileSelect(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        //readSingleFile(evt);
+
+        var files = evt.dataTransfer.files; // FileList object.
+    }
+
+    function handleDragOver(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
     }
 
     //function onWindowResize() {
@@ -82,20 +133,29 @@
     //  }
     //}
 
-    function readSingleFile(e) {
-        var file = e.target.files[0];
+    function readSingleFile(evt) {
+        var file = evt.target.files[0];
         if (!file) {
             return;
         }
+        // Check extension!!!
         var reader = new FileReader();
         reader.onload = function(e) {
             var contents = e.target.result;
             var importScene = AssimpToThreeJS.loadContents(contents);
             scene.add(importScene);
+            var bbox = new THREE.Box3();
+            bbox.setFromObject(scene);
+            var bsphere = bbox.getBoundingSphere();
+            camera.position.x = bsphere.center.x;
+            camera.position.y = bsphere.center.y;
+            camera.position.z = -((bsphere.radius * 1.5) / Math.tan(THREE.Math.degToRad(camera.fov / 2.0)));
+            camera.lookAt(bsphere.center)
+
             //globalScene = AssimpToThreeJS.loadContentsHack(contents);
             // possibly add lights if the importScene doesn't have any
         };
-        reader.readAsText(file);
+        reader.readAsText(file); // What if binary fbx? reader.readAsBinaryString(file);
     }
 
     /*
@@ -116,12 +176,18 @@
     */
     function writeSingleFile(e) {
         e.preventDefault();
+        if (scene === null) {
+            return;
+        }
         /*
 	    var BB = get_blob();
 	    saveAs(
 		  new BB([text.value || text.placeholder], {type: "text/plain;charset=" + document.characterSet} ),
          'out.dae');
          */
+        var dropDownElement = document.getElementById("ddFormat");
+        var fileFormat = dropDownElement.options[dropDownElement.selectedIndex].text;
+
         var strScene = AssimpToThreeJS.saveContents(scene);
         //var strScene = AssimpToThreeJS.saveContentsHack(globalScene);
         console.log(strScene);

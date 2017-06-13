@@ -33,7 +33,7 @@ namespace aiBoneEmbind
 		bone.mName = aiString(name);
 	}
 	DefineGetterSetter(aiBone, unsigned int, mNumWeights, NumWeights)
-	DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, object.mNumWeights)
+	//DefineArrayGetterSetter(aiBone, aiVertexWeight, mWeights, Weights, object.mNumWeights)
 	DefineArrayIndexRefGetterSetter(aiBone, aiVertexWeight, mWeights, Weight)
 	DefineConstGetterSetter(aiBone, aiMatrix4x4, mOffsetMatrix, OffsetMatrix)
 	void allocateWeights(aiBone &bone, size_t count = 0)
@@ -119,6 +119,16 @@ namespace aiMeshEmbind
 	{
 		mesh.mColors[colorSetIdx][vertIdx] = value;
 	}
+	/*
+	const aiBone *getBone(const aiMesh &mesh, unsigned int boneIdx)
+	{
+		return mesh.mBones[boneIdx];
+	}
+	void setBone(aiMesh &mesh, unsigned int boneIdx, const aiBone *value)
+	{
+		mesh.mBones[boneIdx] = value;
+	}
+	*/
     void allocateVertices(aiMesh &mesh, size_t count = 0)
     {
 		allocateArray<aiVector3D>(&mesh.mVertices, count, mesh.mNumVertices);
@@ -216,8 +226,12 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 		.constructor<const aiBone&>()
 		.function("getName", &aiBoneEmbind::getName)
 		.function("setName", &aiBoneEmbind::setName)
+		.function("getWeight", &aiBoneEmbind::getWeight)
+		.function("setWeight", &aiBoneEmbind::setWeight)
 		.function("getNumWeights", &aiBoneEmbind::getNumWeights)
 		.function("setNumWeights", &aiBoneEmbind::setNumWeights)
+		.function("getOffsetMatrix", &aiBoneEmbind::getOffsetMatrix)
+		.function("setOffsetMatrix", &aiBoneEmbind::setOffsetMatrix)
 		.function("allocateWeights", &aiBoneEmbind::allocateWeights)
 		;
 
@@ -257,8 +271,8 @@ EMSCRIPTEN_BINDINGS(assimp_mesh)
 	    .function("setFace", &aiMeshEmbind::setFace)
 	    .function("getNumBones", &aiMeshEmbind::getNumBones)
 	    .function("setNumBones", &aiMeshEmbind::setNumBones)
-	    //!!!.function("getBone", &aiMeshEmbind::getBone)
-	    //!!!.function("setBone", &aiMeshEmbind::setBone)
+	    .function("getBone", &aiMeshEmbind::getBone, allow_raw_pointers())
+	    .function("setBone", &aiMeshEmbind::setBone, allow_raw_pointers())
 	    .function("getMaterialIndex", &aiMeshEmbind::getMaterialIndex)
 	    .function("setMaterialIndex", &aiMeshEmbind::setMaterialIndex)
 	    .function("getName", &aiMeshEmbind::getName)
