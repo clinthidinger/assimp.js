@@ -20,12 +20,12 @@
 <script>
     // http://stackoverflow.com/questions/3582671/how-to-open-a-local-disk-file-with-javascript
     'use strict';
-    var camera, scene, renderer, globalScene,
+    var camera, scene = null, renderer, //globalScene,
         mouseX = 0, mouseY = 0,
 	    windowHalfX = window.innerWidth / 2,
 	    windowHalfY = window.innerHeight / 2;
     
-        
+    // https://www.html5rocks.com/en/tutorials/file/dndfiles/
     init();
     animate();
 
@@ -57,7 +57,6 @@
 
         camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
         camera.position.z = 400;
-        scene = new THREE.Scene();
         //var texture = new THREE.TextureLoader().load( 'textures/crate.gif' );
         //var geometry = new THREE.BoxBufferGeometry( 200, 200, 200 );
         //var material = new THREE.MeshBasicMaterial( { map: texture } );
@@ -98,10 +97,10 @@
     }
 
     function render() {
-        //camera.position.x += (mouseX - camera.position.x) * .05;
-        //camera.position.y += (-mouseY - camera.position.y) * .05;
-        //camera.lookAt(scene.position);
-        renderer.render(scene, camera);
+        if (scene !== null) {
+            scene.rotation.y += 0.005;
+            renderer.render(scene, camera);
+        }
     }
 
     function handleFileSelect(evt) {
@@ -133,24 +132,31 @@
     //  }
     //}
 
+    function setCameraFromScene() {
+        var bbox = new THREE.Box3();
+        bbox.setFromObject(scene);
+        var bsphere = bbox.getBoundingSphere();
+        camera.position.x = bsphere.center.x;
+        camera.position.y = bsphere.center.y;
+        camera.position.z = -((bsphere.radius * 1.5) / Math.tan(THREE.Math.degToRad(camera.fov / 2.0)));
+        camera.lookAt(bsphere.center);
+    }
+
     function readSingleFile(evt) {
         var file = evt.target.files[0];
         if (!file) {
             return;
         }
+        scene = null;
+
         // Check extension!!!
         var reader = new FileReader();
         reader.onload = function(e) {
             var contents = e.target.result;
             var importScene = AssimpToThreeJS.loadContents(contents);
+            scene = new THREE.Scene();
             scene.add(importScene);
-            var bbox = new THREE.Box3();
-            bbox.setFromObject(scene);
-            var bsphere = bbox.getBoundingSphere();
-            camera.position.x = bsphere.center.x;
-            camera.position.y = bsphere.center.y;
-            camera.position.z = -((bsphere.radius * 1.5) / Math.tan(THREE.Math.degToRad(camera.fov / 2.0)));
-            camera.lookAt(bsphere.center)
+            setCameraFromScene();
 
             //globalScene = AssimpToThreeJS.loadContentsHack(contents);
             // possibly add lights if the importScene doesn't have any
@@ -179,19 +185,12 @@
         if (scene === null) {
             return;
         }
-        /*
-	    var BB = get_blob();
-	    saveAs(
-		  new BB([text.value || text.placeholder], {type: "text/plain;charset=" + document.characterSet} ),
-         'out.dae');
-         */
         var dropDownElement = document.getElementById("ddFormat");
         var fileFormat = dropDownElement.options[dropDownElement.selectedIndex].text;
 
         var strScene = AssimpToThreeJS.saveContents(scene);
         //var strScene = AssimpToThreeJS.saveContentsHack(globalScene);
         console.log(strScene);
-        //var blob = new Blob(["Hello, world!"], {type: "text/plain;charset=utf-8"});
         var blob = new Blob([strScene], {type: "text/plain;charset=utf-8"});
         saveAs(blob, "download.dae");
         console.log('write');

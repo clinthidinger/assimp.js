@@ -1,13 +1,14 @@
 EMCC=emcc
 IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp/contrib \
            -Iassimp/contrib/openddlparser/include -Iassimp/contrib/clipper -Iassimp/contrib/ConvertUTF \
-           -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
+           -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/rapidjson/include -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
            -Iinclude
 # NOTE: "-s SAFE_HEAP=1" is breaking things.  It would be nice to use it for debug builds.
 
 EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s TOTAL_MEMORY=64MB -s MODULARIZE=1
 debug: EFLAGS += -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -g4 --js-opts 0
 assimp.js: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1 --closure 1
+wasm: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -s WASM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1 --closure 1
 
 CPPFLAGS=$(EFLAGS) -std=c++11 -DAI_FORCE_INLINE=inline
 CFLAGS=$(EFLAGS) -DZ_HAVE_UNISTD_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STDDEF_H=1
@@ -30,7 +31,6 @@ DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_RAW_IMPORTER=1 \
 -DASSIMP_BUILD_NO_OFF_IMPORTER=1 \
 -DASSIMP_BUILD_NO_AC_IMPORTER=1 \
--DASSIMP_BUILD_NO_BVH_IMPORTER=1 \
 -DASSIMP_BUILD_NO_IRRMESH_IMPORTER=1 \
 -DASSIMP_BUILD_NO_IRR_IMPORTER=1 \
 -DASSIMP_BUILD_NO_Q3D_IMPORTER=1 \
@@ -76,7 +76,6 @@ DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_OGRE_EXPORTER=1 \
 -DASSIMP_BUILD_NO_MS3D_EXPORTER=1 \
 -DASSIMP_BUILD_NO_COB_EXPORTER=1 \
--DASSIMP_BUILD_NO_BLEND_EXPORTER=1 \
 -DASSIMP_BUILD_NO_Q3BSP_EXPORTER=1 \
 -DASSIMP_BUILD_NO_NDO_EXPORTER=1 \
 -DASSIMP_BUILD_NO_IFC_EXPORTER=1 \
@@ -95,8 +94,10 @@ DISABLEFLAGS= \
 #-DASSIMP_BUILD_NO_COLLADA_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_PLY_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_BVH_EXPORTER=1 \
-# BUG -DASSIMP_BUILD_NO_OPENGEX_EXPORTER=1 \
-# -DASSIMP_BUILD_NO_OPENGEX_IMPORTER=1 \
+# BUG: -DASSIMP_BUILD_NO_OPENGEX_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_OPENGEX_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_BLEND_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_BVH_IMPORTER=1 \
 
 
 ASSIMP_CORE_SRC = \
@@ -178,7 +179,19 @@ assimp/code/FBXUtil.cpp \
 assimp/code/STLExporter.cpp \
 assimp/code/STLLoader.cpp \
 assimp/code/OpenGEXExporter.cpp \
-assimp/code/OpenGEXImporter.cpp
+assimp/code/OpenGEXImporter.cpp \
+assimp/code/PlyExporter.cpp \
+assimp/code/PlyLoader.cpp \
+assimp/code/BlenderBMesh.cpp \
+assimp/code/BlenderDNA.cpp \
+assimp/code/BlenderLoader.cpp \
+assimp/code/BlenderModifier.cpp \
+assimp/code/BlenderScene.cpp \
+assimp/code/BlenderTessellator.cpp \
+assimp/code/BVHLoader.cpp \
+assimp/code/glTFExporter.cpp \
+assimp/code/glTFImporter.cpp
+
 
 ASSIMP_CONTRIB_SRC = \
 assimp/contrib/clipper/clipper.cpp \
@@ -230,6 +243,9 @@ OBJ = $(addsuffix .bc, $(basename $(SRC)))
 TARGET = assimp.js
 
 assimp.js: $(OBJ)
+	$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
+
+wasm: $(OBJ)
 	$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
 debug: $(OBJ)

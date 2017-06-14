@@ -261,6 +261,10 @@ var AssimpToThreeJS = (function() {
         var projMtx = new ASSIMP.aiMatrix4x4();
         camera.getCameraMatrix(projMtx)
         threeCam.projectionMatrix = assimpMat4ToThreeMat4(projMtx);
+        //threeCam.projectionMatrix.set(projMtx.getA1(), projMtx.getB1(), projMtx.getC1(), projMtx.getD1(),
+        //              projMtx.getA2(), projMtx.getB2(), projMtx.getC2(), projMtx.getD2(),
+        //              projMtx.getA3(), projMtx.getB3(), projMtx.getC3(), projMtx.getD3(),
+        //              projMtx.getA4(), projMtx.getB4(), projMtx.getC4(), projMtx.getD4());
         projMtx.delete();
         threeScene.add(threeCam);
         console.log('add cam');
@@ -331,8 +335,8 @@ var AssimpToThreeJS = (function() {
     }
 
 
-    function loadPositionKeys(animNode, tracks) {
-        var posTrackName = nodeName + '_positionKeys',
+    function loadPositionKeys(animNode) {
+        var posTrackName = animNode.getNodeName().str() + '_positionKeys',
             times = [],
             values = [];
 
@@ -342,16 +346,18 @@ var AssimpToThreeJS = (function() {
             var t = posKey.getTime();
             var val = posKey.getValue();
             times.push(t);
-            values.push(val);
+            values.push(val.x);
+            values.push(val.y);
+            values.push(val.z);
         }
-        var threePosTrack = new THREE.VectorKeyFrameTrack(posTrackName, times, values);
+        var threePosTrack = new THREE.VectorKeyframeTrack(posTrackName, times, values);
         //threePosTrack.interpolation = ASSIMP.aiAnimBehaviour.;
 
         return threePosTrack;
     }
 
-    function loadRotationKeys(animNode, tracks) {
-        var rotTrackName = nodeName + '_rotationKeys',
+    function loadRotationKeys(animNode) {
+        var rotTrackName = animNode.getNodeName().str() + '_rotationKeys',
             times = [],
             values = [];
             
@@ -361,15 +367,18 @@ var AssimpToThreeJS = (function() {
             var t = rotKey.getTime();
             var val = rotKey.getValue();
             times.push(t);
-            values.push(val);
+            values.push(val.x);
+            values.push(val.y);
+            values.push(val.z);
+            values.push(val.w);
         }
         var threeRotTrack = new THREE.QuaternionKeyframeTrack(rotTrackName, times, values);
 
         return threeRotTrack;
     }
 
-    function loadScalingKeys(animNode, tracks) {
-        var scalTrackName = nodeName + '_scalingKeys',
+    function loadScalingKeys(animNode) {
+        var scalTrackName = animNode.getNodeName().str() + '_scalingKeys',
             times = [],
             values = [];
 
@@ -379,9 +388,11 @@ var AssimpToThreeJS = (function() {
             var t = scalKey.getTime();
             var val = scalKey.getValue();
             times.push(t);
-            values.push(val);
+            values.push(val.x);
+            values.push(val.y);
+            values.push(val.z);
         }
-        var threeScalTrack = new THREE.VectorKeyFrameTrack(scalTrackName, times, values);
+        var threeScalTrack = new THREE.VectorKeyframeTrack(scalTrackName, times, values);
 
         return threeScalTrack;
     }
@@ -396,8 +407,8 @@ var AssimpToThreeJS = (function() {
             var tracks = [];
             for (var chanIdx = 0; chanIdx < numChannels; ++chanIdx ) {
                 var animNode = animation.getChannel(chanIdx);
-                var nodeName = animNode.getNodeName(); // name corresponds to bone or node name!!! add animations[] array to node
-                var threeNode = scene.getObjectByName( nodeName, true );
+                var nodeName = animNode.getNodeName().str(); // name corresponds to bone or node name!!! add animations[] array to node
+                var threeNode = threeScene.getObjectByName(nodeName, true);
                 if (threeNode !== null) {
                     tracks.push(loadPositionKeys(animNode));
                     tracks.push(loadRotationKeys(animNode));
@@ -484,13 +495,11 @@ var AssimpToThreeJS = (function() {
                       assimpMat4.getB1(), assimpMat4.getB2(), assimpMat4.getB3(), assimpMat4.getB4(),
                       assimpMat4.getC1(), assimpMat4.getC2(), assimpMat4.getC3(), assimpMat4.getC4(),
                       assimpMat4.getD1(), assimpMat4.getD2(), assimpMat4.getD3(), assimpMat4.getD4());
-
+       
         return threeMat4;
     }
 
     function threeMat4ToAssimpMat4(threeMat4) {
-        var m0 = new ASSIMP.aiMatrix3x3();
-        var m1 = new ASSIMP.aiMatrix4x4();
         var assimpMat4 = new ASSIMP.aiMatrix4x4(threeMat4.elements[0], threeMat4.elements[1], threeMat4.elements[2], threeMat4.elements[3],
                                                 threeMat4.elements[4], threeMat4.elements[5], threeMat4.elements[6], threeMat4.elements[7],
                                                 threeMat4.elements[8], threeMat4.elements[9], threeMat4.elements[10], threeMat4.elements[11],
@@ -505,10 +514,10 @@ var AssimpToThreeJS = (function() {
             meshIndex = 0,
             assimpChildNode = null,
             threeChildNode = null;
-            //xformMat4 = null;
-
+        
         threeNode.name = assimpNode.getName();
-        threeNode.matrix = assimpMat4ToThreeMat4(assimpNode.getTransformation());
+        threeNode.applyMatrix(assimpMat4ToThreeMat4(assimpNode.getTransformation()));
+        threeNode.updateMatrixWorld();
         
         for (i = 0; i < numMeshes; ++i) {
             meshIndex = assimpNode.getMeshIndex(i);
@@ -518,6 +527,7 @@ var AssimpToThreeJS = (function() {
             assimpChildNode = assimpNode.getChild(i);
             threeChildNode = new THREE.Object3D();
             threeNode.add(threeChildNode);
+            //threeChildNode.updateMatrixWorld();
             loadNode(threeChildNode, assimpChildNode, meshArray);
         }
     }
@@ -559,7 +569,7 @@ var AssimpToThreeJS = (function() {
         }
         for (i = 0; i < numAnimations; ++i) {
             var animation = assimpScene.getAnimation(i);
-            loadAnimation(threeScene, animation);
+            //loadAnimation(threeScene, animation);
         }
         for (i = 0; i < numCameras; ++i) {
             var camera = assimpScene.getCamera(i);
@@ -579,22 +589,10 @@ var AssimpToThreeJS = (function() {
         var numVertices = positions.count;
         assimpMesh.allocateVertices(numVertices);
         assimpMesh.setNumVertices(numVertices);
-        //var assimpVtx = new ASSIMP.aiVector3D();
-        
-        
-        //assert(positions.array.length === numVertices);
-        //var len = positions.array.length;
-        //var n = assimpMesh.getNumVertices();
-        //assimpMesh.setVertex(0, assimpVtx);
-        //assimpMesh.setVertex(n - 1, assimpVtx);
         
         for (var posIdx = 0, fltIdx = 0; posIdx < numVertices; ++posIdx) {
-            //assimpVtx.set(positions.array[fltIdx++], positions.array[fltIdx++], positions.array[fltIdx++]);
-            //assimpMesh.setVertex(posIdx, assimpVtx);
             assimpMesh.setVertex(posIdx, positions.array[fltIdx++], positions.array[fltIdx++], positions.array[fltIdx++]);
         }
-        
-        //assimpVtx.delete();
     }
 
     function saveIndices(threeMesh, assimpMesh) {
