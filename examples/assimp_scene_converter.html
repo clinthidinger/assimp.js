@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<h3>3D File Converter</h3>
+<div id="container"></div>
+<input type="file" id="load" accept=".dae,.obj,.stl,.ply,.fbx,.bvh,.blend" />
+<label>Output Format:   </label>
+<select id="ddFormat" name="OutputFormat">
+  <option value="collada">DAE</option>
+  <option value="obj">OBJ</option>
+  <option value="stl">STL</option>
+  <option value="fbx">FBX</option>
+  <option value="ply">PLY</option>
+  <option value="bvh">BVH</option>
+  <option value="blend">BLEND</option>
+  <!--
+  <option value="gltf">GLTF</option>
+  -->
+</select>
+<input type="submit" id="save" value="Save"/>
+<pre id="file-content"></pre>
+<script src="js/three.min.js"></script>
+<script src="js/FileSaver.min.js"></script>
+<script src="../assimp.js"></script>
+<script>
+	'use strict';
+    var ASSIMP = window.ASSIMP({noInitialRun: true});
+	var assimpScene = null;
+
+	init();
+	function init() {
+        document.getElementById('load').addEventListener('change', readSingleFile, false);
+        document.getElementById('save').addEventListener('click', writeSingleFile, false);
+    }
+
+	function readSingleFile(evt) {
+        var file = evt.target.files[0];
+        if (!file) {
+            return;
+        }
+        console.log('file: ' + file);
+        assimpScene = null;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var contents = e.target.result;
+            var importer = null;
+            try {
+            	if (importer === null) {
+	            	importer = new ASSIMP.Importer();
+	            }
+            	if (assimpScene !== null) {
+            		assimpScene.delete();
+            		assimpScene = null;
+            	}
+        		assimpScene = importer.readFileFromMemory(contents, ASSIMP.GetTargetRealtimeMaxQualityFlags());
+        	}
+        	catch(err) {
+        		alert(err);
+        	}
+        };
+        reader.readAsBinaryString(file); // What if binary fbx? reader.readAsBinaryString(file);
+    }
+
+    function writeSingleFile(e) {
+        e.preventDefault();
+        if (assimpScene === null) {
+            return;
+        }
+        var dropDownElement = document.getElementById("ddFormat");
+        var fileFormat = dropDownElement.options[dropDownElement.selectedIndex].value;
+        var fileExt = dropDownElement.options[dropDownElement.selectedIndex].text;
+        var exporter = null;
+        var strScene = "";
+        try {
+        	exporter = new ASSIMP.Exporter();
+    		strScene = exporter.exportToString(assimpScene, fileFormat, null);
+    	}
+    	catch(err) {
+    		alert(err);
+    	}
+    	finally {
+    		if (exporter !== null) {
+    			exporter.delete();
+    		}
+    	}
+        var blob = new Blob([strScene], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "download." + fileExt);
+    }
+
+</script>
+</html>
