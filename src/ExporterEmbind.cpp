@@ -2,7 +2,7 @@
 #include <emscripten/bind.h>
 #include <algorithm>
 #include <string>
-#include "utilEmbind.h"
+#include "UtilEmbind.h"
 #include "assimp/Exporter.hpp"
 #include "assimp/scene.h"
 #include "assimp/DefaultLogger.hpp"

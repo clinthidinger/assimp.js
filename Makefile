@@ -1,12 +1,12 @@
 EMCC=emcc
 IFLAGS=-I. -Iassimp/include -Iassimp/code -Iassimp/code/BoostWorkaround -Iassimp/contrib \
            -Iassimp/contrib/openddlparser/include -Iassimp/contrib/clipper -Iassimp/contrib/ConvertUTF \
-           -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/rapidjson/include -Iassimp/contrib/unzip -Iasismp/contrib/zlib \
+           -Iassimp/contrib/irrXML -Iassimp/contrib/poly2tri/poly2tri -Iassimp/contrib/rapidjson/include -Iassimp/contrib/unzip -Iassimp/contrib/zlib \
            -Iinclude
 # NOTE: "-s SAFE_HEAP=1" is breaking things.  It would be nice to use it for debug builds.
 
-EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s TOTAL_MEMORY=64MB -s MODULARIZE=1
-debug: EFLAGS += -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -g4 --js-opts 0
+EFLAGS=--bind --memory-init-file 0 -s EXPORT_NAME="'ASSIMP'" -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
+debug: EFLAGS += -s WARN_ON_UNDEFINED_SYMBOLS=1 -s VERBOSE=1  -s DEMANGLE_SUPPORT=1 -s ASSERTIONS=1 -g4 --js-opts 0     -s SAFE_HEAP=1 -s ALIASING_FUNCTION_POINTERS=0
 assimp.js: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1 --closure 1
 wasm: EFLAGS += -s ASM_JS=1 -s NO_EXIT_RUNTIME=1 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -s WASM=1 -O2 --closure 0 --llvm-lto 1 --llvm-opts 2 --js-opts 1 --closure 1
 
@@ -47,8 +47,13 @@ DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_NDO_IMPORTER=1 \
 -DASSIMP_BUILD_NO_IFC_IMPORTER=1 \
 -DASSIMP_BUILD_NO_XGL_IMPORTER=1 \
+-DASSIMP_BUILD_NO_3MF_IMPORTER=1 \
+-DASSIMP_BUILD_NO_X3D_IMPORTER=1 \
+-DASSIMP_BUILD_NO_MMD_IMPORTER=1 \
 -DASSIMP_BUILD_NO_ASSBIN_IMPORTER=1 \
+-DASSIMP_BUILD_NO_OPENGEX_IMPORTER=1 \
 -DASSIMP_BUILD_NO_C4D_IMPORTER=1 \
+\
 -DASSIMP_BUILD_NO_X_EXPORTER=1 \
 -DASSIMP_BUILD_NO_3DS_EXPORTER=1 \
 -DASSIMP_BUILD_NO_MD3_EXPORTER=1 \
@@ -80,9 +85,30 @@ DISABLEFLAGS= \
 -DASSIMP_BUILD_NO_NDO_EXPORTER=1 \
 -DASSIMP_BUILD_NO_IFC_EXPORTER=1 \
 -DASSIMP_BUILD_NO_XGL_EXPORTER=1 \
+-DASSIMP_BUILD_NO_3MF_EXPORTER=1 \
+-DASSIMP_BUILD_NO_X3D_EXPORTER=1 \
+-DASSIMP_BUILD_NO_MMD_EXPORTER=1 \
 -DASSIMP_BUILD_NO_ASSBIN_EXPORTER=1 \
--DASSIMP_BUILD_NO_C4D_EXPORTER=1 
+-DASSIMP_BUILD_NO_OPENGEX_EXPORTER=1 \
+-DASSIMP_BUILD_NO_C4D_EXPORTER=1 \
 
+
+#-DASSIMP_BUILD_NO_STL_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_STL_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_BLEND_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_BLEND_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_GLTF_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_GLTF_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_SIB_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_SIB_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_PLY_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_PLY_EXPORTER=1 \
+#-DASSIMP_BUILD_NO_BVH_IMPORTER=1 \
+#-DASSIMP_BUILD_NO_BVH_EXPORTER=1 \
+#
+
+
+#-DASSIMP_CATCH_GLOBAL_EXCEPTIONS
 # These are the files we support:
 #-DASSIMP_BUILD_NO_OBJ_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_COLLADA_EXPORTER=1 \
@@ -94,7 +120,7 @@ DISABLEFLAGS= \
 #-DASSIMP_BUILD_NO_COLLADA_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_PLY_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_BVH_EXPORTER=1 \
-# BUG: -DASSIMP_BUILD_NO_OPENGEX_EXPORTER=1 \
+
 #-DASSIMP_BUILD_NO_OPENGEX_IMPORTER=1 \
 #-DASSIMP_BUILD_NO_BLEND_EXPORTER=1 \
 #-DASSIMP_BUILD_NO_BVH_IMPORTER=1 \
@@ -102,6 +128,7 @@ DISABLEFLAGS= \
 
 ASSIMP_CORE_SRC = \
 assimp/code/Assimp.cpp \
+assimp/code/AssimpCExport.cpp \
 assimp/code/BaseImporter.cpp \
 assimp/code/BaseProcess.cpp \
 assimp/code/Bitmap.cpp \
@@ -138,6 +165,7 @@ assimp/code/RemoveVCProcess.cpp \
 assimp/code/SGSpatialSort.cpp \
 assimp/code/SceneCombiner.cpp \
 assimp/code/ScenePreprocessor.cpp \
+assimp/code/SGSpatialSort.cpp \
 assimp/code/SkeletonMeshBuilder.cpp \
 assimp/code/SortByPTypeProcess.cpp \
 assimp/code/SpatialSort.cpp \
@@ -153,6 +181,12 @@ assimp/code/Version.cpp \
 assimp/code/VertexTriangleAdjacency.cpp 
 
 
+# Future release:
+#assimp/code/CInterfaceIOWrapper.cpp \
+#assimp/code/CreateAnimMesh.cpp \
+#assimp/code/scene.cpp \
+
+
 ASSIMP_FILE_FORMAT_SRC = \
 assimp/code/ColladaExporter.cpp \
 assimp/code/ColladaLoader.cpp \
@@ -161,15 +195,15 @@ assimp/code/ObjExporter.cpp \
 assimp/code/ObjFileImporter.cpp \
 assimp/code/ObjFileMtlImporter.cpp \
 assimp/code/ObjFileParser.cpp \
+assimp/code/FBXImporter.cpp \
+assimp/code/FBXMeshGeometry.cpp \
 assimp/code/FBXAnimation.cpp \
 assimp/code/FBXBinaryTokenizer.cpp \
 assimp/code/FBXConverter.cpp \
 assimp/code/FBXDeformer.cpp \
 assimp/code/FBXDocument.cpp \
 assimp/code/FBXDocumentUtil.cpp \
-assimp/code/FBXImporter.cpp \
 assimp/code/FBXMaterial.cpp \
-assimp/code/FBXMeshGeometry.cpp \
 assimp/code/FBXModel.cpp \
 assimp/code/FBXNodeAttribute.cpp \
 assimp/code/FBXParser.cpp \
@@ -178,8 +212,6 @@ assimp/code/FBXTokenizer.cpp \
 assimp/code/FBXUtil.cpp \
 assimp/code/STLExporter.cpp \
 assimp/code/STLLoader.cpp \
-assimp/code/OpenGEXExporter.cpp \
-assimp/code/OpenGEXImporter.cpp \
 assimp/code/PlyExporter.cpp \
 assimp/code/PlyLoader.cpp \
 assimp/code/BlenderBMesh.cpp \
@@ -188,9 +220,12 @@ assimp/code/BlenderLoader.cpp \
 assimp/code/BlenderModifier.cpp \
 assimp/code/BlenderScene.cpp \
 assimp/code/BlenderTessellator.cpp \
-assimp/code/BVHLoader.cpp \
-assimp/code/glTFExporter.cpp \
-assimp/code/glTFImporter.cpp
+assimp/code/BVHLoader.cpp 
+
+# Future release:
+#assimp/code/glTFExporter.cpp \
+#assimp/code/glTFImporter.cpp \
+#assimp/code/SIBImporter.cpp 
 
 
 ASSIMP_CONTRIB_SRC = \
@@ -249,7 +284,8 @@ wasm: $(OBJ)
 	$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
 debug: $(OBJ)
-		$(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
+		EMCC_DEBUG=1 $(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
+		#EMCC_DEBUG=1  EMCC_AUTODEBUG=1 $(EMCC) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
 %.bc: %.cpp
 	$(EMCC) $(IFLAGS) $(CPPFLAGS) $(DISABLEFLAGS) -o $@ $^

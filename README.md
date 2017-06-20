@@ -37,18 +37,13 @@ make debug
 
 TODO:
 
+Update to latest assimp.  Will have to put printf("...\n") statements in Importer::ReadFile() to figure out problem.  Most likely need to add a cpp file.
+
+ASSERTIONS=2 causes "RangeError: Maximum call stack size exceeded"
+This is supposed to fix it, but doesn't seem to work:
+On Linux and Mac OS X, you can just do NODE_JS = ['node', '--stack_size=8192'] in the Emscripten Compiler Configuration File (.emscripten). On Windows, you will also need --max-stack-size=8192, and also run editbin /stack:33554432 node.exe.
+
 Using "-s SAFE_HEAP=1" will cause a crash on export due to mem alignment issues.  They will likely happen in the material export.  Look into "-s WASM=1".
 
 For unbound types:
 Pay attention to ordering of sources in makefile.  Also, make sure to include the appropriate headers in embind files.
-
-Getter setter for indexed array.
-Finish mesh embind.
-User array getter setters where needed.
-Make aiString to std::string.
-
-Threejs data.
-
-Module name not working.
-
-MAR 12: wrap meshes and things with std::vec from scene

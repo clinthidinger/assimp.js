@@ -21,6 +21,10 @@ namespace aiVector2DEmbind
     {
         v = f;
     }
+    TReal at(aiVector2D &v, int index) // This func exists bc of warning.
+    {
+        return (index == 1) ? v.y : v.x;
+    }
 }
 
 
@@ -36,8 +40,9 @@ EMSCRIPTEN_BINDINGS(assimp_vector2)
         .function("op_div_equals", &aiVector2D::operator/=)
         .function("op_equal_to", &aiVector2D::operator==)
         .function("op_not_equal_to", &aiVector2D::operator!=)
-        .function("at", select_overload<TReal(unsigned int) const>(&aiVector2D::operator[]))
-        .function("at", select_overload<TReal &(unsigned int)>(&aiVector2D::operator[]))
+        //.function("at", select_overload<TReal(unsigned int) const>(&aiVector2D::operator[]))
+        //.function("at", select_overload<TReal &(unsigned int)>(&aiVector2D::operator[]))
+        .function("at", &aiVector2DEmbind::at)
         .function("squareLength", &aiVector2D::SquareLength)
         .function("length", &aiVector2D::Length)
         .function("normalize", &aiVector2D::Normalize)

@@ -1,7 +1,9 @@
 
 #include <emscripten/bind.h>
+#include <cmath>
 #include "UtilEmbind.h"
 #include "assimp/color4.h"
+#include "assimp/color4.inl"
 
 using namespace emscripten;
 

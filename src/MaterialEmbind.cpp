@@ -2,7 +2,9 @@
 #include <emscripten/bind.h>
 #include "UtilEmbind.h"
 #include "assimp/material.h"
+#include "assimp/material.inl"
 #include "assimp/vector2.h"
+#include "assimp/vector2.inl"
 #include "assimp/types.h"
 
 using namespace emscripten;
