@@ -791,7 +791,7 @@ var AssimpToThreeJS = (function () {
     }
   }
 
-  function saveContents (threeScene) {
+  function saveContents (threeScene, fileFormat) {
     var assimpScene = new ASSIMP.aiScene()
     var numMeshes = 0
     var numMaterials = 0
@@ -840,7 +840,7 @@ var AssimpToThreeJS = (function () {
     saveNode(assimpScene, assimpRootNode, threeScene)
 
     var exporter = new ASSIMP.Exporter()
-    var str = exporter.exportToString(assimpScene, 'collada', null)
+    var str = exporter.exportToString(assimpScene, fileFormat, null)
     exporter.delete()
     assimpScene.delete()
 

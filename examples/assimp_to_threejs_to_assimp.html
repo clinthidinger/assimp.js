@@ -91,7 +91,7 @@
         var dropDownElement = document.getElementById("ddFormat");
         var fileFormat = dropDownElement.options[dropDownElement.selectedIndex].value;
         var fileExt = dropDownElement.options[dropDownElement.selectedIndex].text;
-        var strScene = AssimpToThreeJS.saveContents(scene);
+        var strScene = AssimpToThreeJS.saveContents(scene, fileFormat);
         var blob = new Blob([strScene], {type: "text/plain;charset=utf-8"});
         saveAs(blob, "download." + fileFormat);
     }	
