@@ -5,9 +5,9 @@ See https://github.com/assimp/assimp and http://assimp.sourceforge.net.
 
 Examples:
 
-	[To threejs](https://clinthidinger.github.io/assimp.js/examples/assimp_to_threejs_to_assimp.html)
-	[File Converter](https://clinthidinger.github.io/assimp.js/examples/assimp_scene_converter.html)
+[To threejs](https://clinthidinger.github.io/assimp.js/examples//assimp_to_threejs_to_assimp.html)
 
+[3D File Converter](https://clinthidinger.github.io/assimp.js/examples/assimp_scene_converter.html)
 
 Build:
 
